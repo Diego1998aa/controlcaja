@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Iniciar SistemaPOS",
+            "type": "clr",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/SistemaPOS.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/bin/Debug",
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "preLaunchTask": "build"
+        }
+    ]
+}
