@@ -45,14 +45,15 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.VisualBasic" />
-    <Reference Include="System.Data.SQLite">
-      <HintPath>packages\System.Data.SQLite.Core.1.0.118.0\lib\net46\System.Data.SQLite.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
+    <Compile Include="Helpers\UITheme.cs" />
     <Compile Include="Models\Models.cs" />
+    <Compile Include="Models\Pedido.cs" />
+    <Compile Include="Models\DetallePedido.cs" />
+    <Compile Include="Models\PedidoService.cs" />
     <Compile Include="Services\UsuarioService.cs" />
     <Compile Include="Services\ProductoService.cs" />
     <Compile Include="Services\VentaService.cs" />
@@ -83,6 +84,20 @@
     <Compile Include="Forms\AjustarStockForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Forms\CantidadForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ConfiguracionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\TerminalVentaForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Data.SQLite">
+      <Version>1.0.118</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

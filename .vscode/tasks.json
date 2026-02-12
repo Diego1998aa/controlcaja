@@ -1,15 +1,25 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "Live Preview",
-			"workspacePath": "c:\\Users\\marcelo aguilera\\Desktop\\Desktop\\Nueva carpeta (2)",
-			"problemMatcher": [],
-			"label": "Live Preview: Run Server",
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "msbuild",
+      "args": [
+        "SistemaPOS.csproj",
+        "/p:Configuration=Debug",
+        "/t:Build",
+        "/v:minimal"
+      ],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile",
+      "options": { "cwd": "${workspaceFolder}" }
+    },
+    {
+      "type": "Live Preview",
+      "workspacePath": "c:\\Users\\marcelo aguilera\\Desktop\\Desktop\\Nueva carpeta (2)",
+      "problemMatcher": [],
+      "label": "Live Preview: Run Server"
+    }
+  ]
 }

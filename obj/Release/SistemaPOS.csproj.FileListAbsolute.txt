@@ -1,0 +1,8 @@
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\bin\Release\SistemaPOS.exe
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\bin\Release\System.Data.SQLite.dll
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Release\SistemaPOS.csproj.AssemblyReference.cache
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Release\SistemaPOS.csproj.CoreCompileInputs.cache
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\bin\Release\SistemaPOS.pdb
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Release\SistemaPOS.csproj.Up2Date
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Release\SistemaPOS.exe
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Release\SistemaPOS.pdb

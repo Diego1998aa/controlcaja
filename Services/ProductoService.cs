@@ -34,7 +34,14 @@ namespace SistemaPOS.Services
         {
             List<Producto> lista = new List<Producto>();
             string sql = "SELECT p.*, c.NombreCategoria FROM Productos p LEFT JOIN Categorias c ON p.IdCategoria = c.IdCategoria";
-            if (soloActivos) sql += " WHERE p.StockActual >= 0"; 
+            
+            if (soloActivos) 
+            {
+                // Si la columna Estado existe, filtramos por ella. Si no, asumimos que todos están activos por compatibilidad.
+                // En un entorno real, aseguraríamos que la columna existe vía migración.
+                // Aquí usamos una lógica simple: si pedimos solo activos, filtramos donde Estado sea 'Activo' o NULL (legacy)
+                sql += " WHERE (p.Estado = 'Activo' OR p.Estado IS NULL)";
+            }
             
             DataTable dt = DatabaseHelper.ExecuteQuery(sql);
             foreach (DataRow row in dt.Rows)
@@ -51,7 +58,8 @@ namespace SistemaPOS.Services
                     StockActual = Convert.ToInt32(row["StockActual"]),
                     StockMinimo = Convert.ToInt32(row["StockMinimo"]),
                     IdCategoria = row["IdCategoria"] != DBNull.Value ? Convert.ToInt32(row["IdCategoria"]) : 0,
-                    NombreCategoria = row["NombreCategoria"].ToString()
+                    NombreCategoria = row["NombreCategoria"].ToString(),
+                    Estado = dt.Columns.Contains("Estado") && row["Estado"] != DBNull.Value ? row["Estado"].ToString() : "Activo"
                 });
             }
             return lista;
@@ -80,15 +88,32 @@ namespace SistemaPOS.Services
 
         public static bool CrearProducto(Producto p)
         {
+            // VALIDACIÓN DE PERMISOS
+            if (!SesionActual.TienePermiso(Permiso.EditarProductos))
+            {
+                throw new UnauthorizedAccessException("No tiene permisos para crear productos");
+            }
+
+            // VALIDACIÓN DE CÓDIGOS ÚNICOS
+            if (ExisteCodigoBarras(p.CodigoBarras))
+            {
+                throw new InvalidOperationException(string.Format("El código de barras '{0}' ya existe", p.CodigoBarras));
+            }
+
+            if (!string.IsNullOrEmpty(p.SKU) && ExisteSKU(p.SKU))
+            {
+                throw new InvalidOperationException(string.Format("El SKU '{0}' ya existe", p.SKU));
+            }
+
             try
             {
-                string sql = @"INSERT INTO Productos (CodigoBarras, SKU, Nombre, Descripcion, PrecioCompra, PrecioVenta, StockActual, StockMinimo, IdCategoria) 
+                string sql = @"INSERT INTO Productos (CodigoBarras, SKU, Nombre, Descripcion, PrecioCompra, PrecioVenta, StockActual, StockMinimo, IdCategoria)
                                VALUES (@cod, @sku, @nom, @desc, @pcompra, @pventa, @stock, @min, @cat)";
-                DatabaseHelper.ExecuteQuery(sql, new[] {
+                DatabaseHelper.ExecuteNonQuery(sql, new[] {
                     new SQLiteParameter("@cod", p.CodigoBarras),
-                    new SQLiteParameter("@sku", p.SKU),
+                    new SQLiteParameter("@sku", p.SKU ?? ""),
                     new SQLiteParameter("@nom", p.Nombre),
-                    new SQLiteParameter("@desc", p.Descripcion),
+                    new SQLiteParameter("@desc", p.Descripcion ?? ""),
                     new SQLiteParameter("@pcompra", p.PrecioCompra),
                     new SQLiteParameter("@pventa", p.PrecioVenta),
                     new SQLiteParameter("@stock", p.StockActual),
@@ -102,16 +127,33 @@ namespace SistemaPOS.Services
 
         public static bool ActualizarProducto(Producto p)
         {
+            // VALIDACIÓN DE PERMISOS
+            if (!SesionActual.TienePermiso(Permiso.EditarProductos))
+            {
+                throw new UnauthorizedAccessException("No tiene permisos para editar productos");
+            }
+
+            // VALIDACIÓN DE CÓDIGOS ÚNICOS (excluyendo el producto actual)
+            if (ExisteCodigoBarras(p.CodigoBarras, p.IdProducto))
+            {
+                throw new InvalidOperationException(string.Format("El código de barras '{0}' ya existe en otro producto", p.CodigoBarras));
+            }
+
+            if (!string.IsNullOrEmpty(p.SKU) && ExisteSKU(p.SKU, p.IdProducto))
+            {
+                throw new InvalidOperationException(string.Format("El SKU '{0}' ya existe en otro producto", p.SKU));
+            }
+
             try
             {
-                string sql = @"UPDATE Productos SET CodigoBarras=@cod, SKU=@sku, Nombre=@nom, Descripcion=@desc, 
-                               PrecioCompra=@pcompra, PrecioVenta=@pventa, StockActual=@stock, StockMinimo=@min, IdCategoria=@cat 
+                string sql = @"UPDATE Productos SET CodigoBarras=@cod, SKU=@sku, Nombre=@nom, Descripcion=@desc,
+                               PrecioCompra=@pcompra, PrecioVenta=@pventa, StockActual=@stock, StockMinimo=@min, IdCategoria=@cat
                                WHERE IdProducto=@id";
-                DatabaseHelper.ExecuteQuery(sql, new[] {
+                DatabaseHelper.ExecuteNonQuery(sql, new[] {
                     new SQLiteParameter("@cod", p.CodigoBarras),
-                    new SQLiteParameter("@sku", p.SKU),
+                    new SQLiteParameter("@sku", p.SKU ?? ""),
                     new SQLiteParameter("@nom", p.Nombre),
-                    new SQLiteParameter("@desc", p.Descripcion),
+                    new SQLiteParameter("@desc", p.Descripcion ?? ""),
                     new SQLiteParameter("@pcompra", p.PrecioCompra),
                     new SQLiteParameter("@pventa", p.PrecioVenta),
                     new SQLiteParameter("@stock", p.StockActual),
@@ -126,7 +168,54 @@ namespace SistemaPOS.Services
 
         public static bool DesactivarProducto(int id)
         {
-            try { DatabaseHelper.ExecuteQuery("DELETE FROM Productos WHERE IdProducto = @id", new[]{new SQLiteParameter("@id", id)}); return true; } catch { return false; }
+            try
+            {
+                DatabaseHelper.ExecuteNonQuery("UPDATE Productos SET Estado = 'Inactivo' WHERE IdProducto = @id", new[]{new SQLiteParameter("@id", id)});
+                return true;
+            }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// Verifica si existe un código de barras en la base de datos
+        /// </summary>
+        /// <param name="codigo">Código de barras a verificar</param>
+        /// <param name="idProductoExcluir">ID del producto a excluir de la búsqueda (para actualizaciones)</param>
+        /// <returns>True si existe, False en caso contrario</returns>
+        private static bool ExisteCodigoBarras(string codigo, int? idProductoExcluir = null)
+        {
+            string sql = "SELECT COUNT(*) FROM Productos WHERE CodigoBarras = @codigo";
+            var parameters = new List<SQLiteParameter> { new SQLiteParameter("@codigo", codigo) };
+
+            if (idProductoExcluir.HasValue)
+            {
+                sql += " AND IdProducto != @id";
+                parameters.Add(new SQLiteParameter("@id", idProductoExcluir.Value));
+            }
+
+            var result = DatabaseHelper.ExecuteScalar(sql, parameters.ToArray());
+            return Convert.ToInt32(result) > 0;
+        }
+
+        /// <summary>
+        /// Verifica si existe un SKU en la base de datos
+        /// </summary>
+        /// <param name="sku">SKU a verificar</param>
+        /// <param name="idProductoExcluir">ID del producto a excluir de la búsqueda (para actualizaciones)</param>
+        /// <returns>True si existe, False en caso contrario</returns>
+        private static bool ExisteSKU(string sku, int? idProductoExcluir = null)
+        {
+            string sql = "SELECT COUNT(*) FROM Productos WHERE SKU = @sku AND SKU != ''";
+            var parameters = new List<SQLiteParameter> { new SQLiteParameter("@sku", sku) };
+
+            if (idProductoExcluir.HasValue)
+            {
+                sql += " AND IdProducto != @id";
+                parameters.Add(new SQLiteParameter("@id", idProductoExcluir.Value));
+            }
+
+            var result = DatabaseHelper.ExecuteScalar(sql, parameters.ToArray());
+            return Convert.ToInt32(result) > 0;
         }
     }
 }

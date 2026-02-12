@@ -4,15 +4,26 @@ using System.Windows.Forms;
 using System.Drawing;
 using SistemaPOS.Models;
 using SistemaPOS.Services;
+using SistemaPOS.Helpers;
 
 namespace SistemaPOS.Forms
 {
     public partial class UsuariosForm : Form
     {
         private DataGridView dgvUsuarios;
+        private Button btnDesactivarReactivar;
 
         public UsuariosForm()
         {
+            // VALIDACIÓN DE PERMISOS
+            if (!SesionActual.TienePermiso(Permiso.VerUsuarios))
+            {
+                MessageBox.Show("No tiene permisos para acceder a este módulo", "Acceso Denegado",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.DialogResult = DialogResult.Cancel;
+                return;
+            }
+
             InitializeComponent();
             CargarUsuarios();
         }
@@ -32,7 +43,7 @@ namespace SistemaPOS.Forms
 
             Label lblTitulo = new Label
             {
-                Text = "GESTIÓN DE USUARIOS",
+                Text = "ADMINISTRACIÓN DE PERSONAL",
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 ForeColor = Color.White,
                 Location = new Point(10, 10),
@@ -42,7 +53,7 @@ namespace SistemaPOS.Forms
 
             Button btnNuevoUsuario = new Button
             {
-                Text = "➕ Nuevo Usuario",
+                Text = "Nuevo Usuario",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Location = new Point(800, 12),
                 Size = new Size(150, 35),
@@ -77,7 +88,7 @@ namespace SistemaPOS.Forms
             // Botones de acción
             Button btnEditar = new Button
             {
-                Text = "✏️ Editar",
+                Text = "Editar",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Location = new Point(10, 570),
                 Size = new Size(150, 40),
@@ -92,7 +103,7 @@ namespace SistemaPOS.Forms
 
             Button btnCambiarPassword = new Button
             {
-                Text = "🔑 Cambiar Contraseña",
+                Text = "Cambiar Contraseña",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Location = new Point(170, 570),
                 Size = new Size(180, 40),
@@ -105,9 +116,9 @@ namespace SistemaPOS.Forms
             btnCambiarPassword.Click += BtnCambiarPassword_Click;
             this.Controls.Add(btnCambiarPassword);
 
-            Button btnDesactivar = new Button
+            btnDesactivarReactivar = new Button
             {
-                Text = "🚫 Desactivar",
+                Text = "Desactivar",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Location = new Point(360, 570),
                 Size = new Size(150, 40),
@@ -116,13 +127,14 @@ namespace SistemaPOS.Forms
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
-            btnDesactivar.FlatAppearance.BorderSize = 0;
-            btnDesactivar.Click += BtnDesactivar_Click;
-            this.Controls.Add(btnDesactivar);
+            btnDesactivarReactivar.FlatAppearance.BorderSize = 0;
+            btnDesactivarReactivar.Click += BtnDesactivarReactivar_Click;
+            this.Controls.Add(btnDesactivarReactivar);
+            dgvUsuarios.SelectionChanged += (s, e) => ActualizarBotonDesactivarReactivar();
 
             Button btnActualizar = new Button
             {
-                Text = "🔄 Actualizar",
+                Text = "Actualizar",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 Location = new Point(820, 570),
                 Size = new Size(150, 40),
@@ -163,6 +175,7 @@ namespace SistemaPOS.Forms
             dgvUsuarios.Columns[4].Width = 130;
             dgvUsuarios.Columns[5].Width = 150;
             dgvUsuarios.Columns[6].Width = 80;
+            dgvUsuarios.DoubleClick += DgvUsuarios_DoubleClick;
         }
 
         private void CargarUsuarios()
@@ -198,10 +211,18 @@ namespace SistemaPOS.Forms
                     dgvUsuarios.Rows[index].DefaultCellStyle.BackColor = Color.FromArgb(60, 60, 70);
                 }
             }
+            ActualizarBotonDesactivarReactivar();
         }
 
         private void BtnNuevoUsuario_Click(object sender, EventArgs e)
         {
+            if (!SesionActual.TienePermiso(Permiso.CrearUsuarios))
+            {
+                MessageBox.Show("No tiene permisos para crear usuarios", "Acceso Denegado",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             UsuarioEditForm editForm = new UsuarioEditForm();
             if (editForm.ShowDialog() == DialogResult.OK)
             {
@@ -240,6 +261,23 @@ namespace SistemaPOS.Forms
             }
 
             int idUsuario = Convert.ToInt32(dgvUsuarios.SelectedRows[0].Cells[0].Value);
+            bool esPropioUsuario = SesionActual.UsuarioActivo != null && idUsuario == SesionActual.UsuarioActivo.IdUsuario;
+
+            // Validar permisos
+            if (esPropioUsuario && !SesionActual.TienePermiso(Permiso.CambiarPropiaContraseña))
+            {
+                MessageBox.Show("No tiene permisos para cambiar contraseñas", "Acceso Denegado",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!esPropioUsuario && !SesionActual.TienePermiso(Permiso.CambiarContraseñas))
+            {
+                MessageBox.Show("No tiene permisos para cambiar contraseñas de otros usuarios", "Acceso Denegado",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             string nombreUsuario = dgvUsuarios.SelectedRows[0].Cells[2].Value.ToString();
 
             CambiarPasswordForm passwordForm = new CambiarPasswordForm(idUsuario, nombreUsuario);
@@ -250,44 +288,94 @@ namespace SistemaPOS.Forms
             }
         }
 
-        private void BtnDesactivar_Click(object sender, EventArgs e)
+        private void DgvUsuarios_DoubleClick(object sender, EventArgs e)
+        {
+            if (dgvUsuarios.SelectedRows.Count > 0)
+                BtnEditar_Click(sender, e);
+        }
+
+        private void ActualizarBotonDesactivarReactivar()
+        {
+            if (btnDesactivarReactivar == null) return;
+            if (dgvUsuarios.SelectedRows.Count == 0)
+            {
+                btnDesactivarReactivar.Text = "Desactivar";
+                btnDesactivarReactivar.BackColor = Color.FromArgb(139, 0, 0);
+                btnDesactivarReactivar.Enabled = false;
+                return;
+            }
+            object valEstado = dgvUsuarios.SelectedRows[0].Cells[6].Value;
+            bool activo = valEstado != null && valEstado.ToString() == "Activo";
+            int idUsuario = Convert.ToInt32(dgvUsuarios.SelectedRows[0].Cells[0].Value);
+            bool esUsuarioActual = SesionActual.UsuarioActivo != null && idUsuario == SesionActual.UsuarioActivo.IdUsuario;
+
+            if (activo)
+            {
+                btnDesactivarReactivar.Text = "Desactivar";
+                btnDesactivarReactivar.BackColor = Color.FromArgb(139, 0, 0);
+                btnDesactivarReactivar.Enabled = !esUsuarioActual;
+            }
+            else
+            {
+                btnDesactivarReactivar.Text = "Reactivar";
+                btnDesactivarReactivar.BackColor = Color.FromArgb(34, 139, 34);
+                btnDesactivarReactivar.Enabled = true;
+            }
+        }
+
+        private void BtnDesactivarReactivar_Click(object sender, EventArgs e)
         {
             if (dgvUsuarios.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Seleccione un usuario.", "Aviso",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Seleccione un usuario.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             int idUsuario = Convert.ToInt32(dgvUsuarios.SelectedRows[0].Cells[0].Value);
-            
-            // No permitir desactivar al usuario actual
-            if (idUsuario == SesionActual.UsuarioActivo.IdUsuario)
-            {
-                MessageBox.Show("No puede desactivar su propio usuario.", "Operación No Permitida",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+            object valEstado2 = dgvUsuarios.SelectedRows[0].Cells[6].Value;
+            bool activo = valEstado2 != null && valEstado2.ToString() == "Activo";
 
-            DialogResult result = MessageBox.Show(
-                "¿Está seguro que desea desactivar este usuario?",
-                "Confirmar Desactivación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning
-            );
-
-            if (result == DialogResult.Yes)
+            if (activo)
             {
-                if (UsuarioService.EliminarUsuario(idUsuario))
+                if (SesionActual.UsuarioActivo != null && idUsuario == SesionActual.UsuarioActivo.IdUsuario)
                 {
-                    CargarUsuarios();
-                    MessageBox.Show("Usuario desactivado exitosamente.", "Éxito",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("No puede desactivar su propio usuario.", "Operación no permitida",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
-                else
+                DialogResult result = MessageBox.Show("¿Desactivar este usuario? No podrá iniciar sesión.", "Confirmar",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result != DialogResult.Yes) return;
+                try
                 {
-                    MessageBox.Show("Error al desactivar el usuario.", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    if (UsuarioService.EliminarUsuario(idUsuario))
+                    {
+                        CargarUsuarios();
+                        MessageBox.Show("Usuario desactivado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                        MessageBox.Show("Error al desactivar.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                object valNombre = dgvUsuarios.SelectedRows[0].Cells[2].Value;
+                object valRol = dgvUsuarios.SelectedRows[0].Cells[3].Value;
+                string nombre = valNombre != null ? valNombre.ToString() : "";
+                string rol = valRol != null ? valRol.ToString() : RolesPermisos.Vendedor;
+                try
+                {
+                    UsuarioService.ActualizarUsuario(idUsuario, nombre, rol, true);
+                    CargarUsuarios();
+                    MessageBox.Show("Usuario reactivado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -296,10 +384,16 @@ namespace SistemaPOS.Forms
     // Formulario para crear/editar usuarios
     public partial class UsuarioEditForm : Form
     {
+        private const int MinLongitudUsuario = 3;
+        private const int MaxLongitudUsuario = 50;
+        private const int MinLongitudPassword = 6;
+
         private int? idUsuario;
         private TextBox txtUsuario, txtNombreCompleto, txtPassword, txtConfirmarPassword;
         private ComboBox cboRol;
         private CheckBox chkActivo;
+        private Label lblFechaCreacion, lblUltimoAcceso;
+        private Button btnCambiarPassword;
 
         public UsuarioEditForm(int? idUsuario = null)
         {
@@ -315,95 +409,183 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Text = idUsuario.HasValue ? "Editar Usuario" : "Nuevo Usuario";
-            this.Size = new Size(450, 400);
+            this.Size = new Size(520, 620);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.BackColor = Color.FromArgb(37, 37, 38);
+            
+            UITheme.ApplyTheme(this);
 
             Panel panelPrincipal = new Panel
             {
-                Location = new Point(20, 20),
-                Size = new Size(390, 330),
-                BackColor = Color.FromArgb(45, 45, 48)
+                Location = new Point(16, 16),
+                Size = new Size(472, 560),
+                BackColor = UITheme.PanelBackground
             };
 
-            int y = 20;
+            int y = 12;
 
+            // Título
             Label lblTitulo = new Label
             {
-                Text = idUsuario.HasValue ? "EDITAR USUARIO" : "NUEVO USUARIO",
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, y),
-                AutoSize = false,
-                Size = new Size(350, 30),
-                TextAlign = ContentAlignment.MiddleCenter
+                Text = idUsuario.HasValue ? "Editar usuario" : "Nuevo usuario",
+                Font = UITheme.FontTitle,
+                ForeColor = UITheme.TextPrimary,
+                Location = new Point(16, y),
+                AutoSize = true
             };
             panelPrincipal.Controls.Add(lblTitulo);
-            y += 50;
+            y += 44;
 
-            panelPrincipal.Controls.Add(CrearLabel("Usuario:", 20, y));
-            txtUsuario = CrearTextBox(20, y + 25, 350);
-            txtUsuario.Enabled = !idUsuario.HasValue; // No editable si es edición
-            panelPrincipal.Controls.Add(txtUsuario);
-            y += 60;
-
-            panelPrincipal.Controls.Add(CrearLabel("Nombre Completo:", 20, y));
-            txtNombreCompleto = CrearTextBox(20, y + 25, 350);
-            panelPrincipal.Controls.Add(txtNombreCompleto);
-            y += 60;
-
-            if (!idUsuario.HasValue) // Solo para nuevos usuarios
+            // Grupo: Datos de cuenta
+            GroupBox grpCuenta = new GroupBox
             {
-                panelPrincipal.Controls.Add(CrearLabel("Contraseña:", 20, y));
-                txtPassword = CrearTextBox(20, y + 25, 350);
+                Text = "  Datos de cuenta  ",
+                Font = UITheme.FontSubtitle,
+                ForeColor = UITheme.TextPrimary,
+                Location = new Point(16, y),
+                Size = new Size(440, idUsuario.HasValue ? 100 : 200),
+                BackColor = UITheme.PanelBackground
+            };
+            int yGrp = 28;
+            grpCuenta.Controls.Add(CrearLabel("Usuario (inicio de sesión):", 12, yGrp));
+            txtUsuario = CrearTextBox(12, yGrp + 24, 416);
+            txtUsuario.Enabled = !idUsuario.HasValue;
+            txtUsuario.MaxLength = MaxLongitudUsuario;
+            if (!idUsuario.HasValue)
+                txtUsuario.ForeColor = Color.Silver;
+            grpCuenta.Controls.Add(txtUsuario);
+            yGrp += 64;
+
+            if (!idUsuario.HasValue)
+            {
+                grpCuenta.Controls.Add(CrearLabel("Contraseña (mín. " + MinLongitudPassword + " caracteres):", 12, yGrp));
+                txtPassword = CrearTextBox(12, yGrp + 24, 416);
                 txtPassword.UseSystemPasswordChar = true;
-                panelPrincipal.Controls.Add(txtPassword);
-                y += 50;
-
-                panelPrincipal.Controls.Add(CrearLabel("Confirmar Contraseña:", 20, y));
-                txtConfirmarPassword = CrearTextBox(20, y + 25, 350);
+                grpCuenta.Controls.Add(txtPassword);
+                yGrp += 64;
+                grpCuenta.Controls.Add(CrearLabel("Confirmar contraseña:", 12, yGrp));
+                txtConfirmarPassword = CrearTextBox(12, yGrp + 24, 416);
                 txtConfirmarPassword.UseSystemPasswordChar = true;
-                panelPrincipal.Controls.Add(txtConfirmarPassword);
-                y += 60;
+                grpCuenta.Controls.Add(txtConfirmarPassword);
+                yGrp += 56;
             }
+            panelPrincipal.Controls.Add(grpCuenta);
+            y += grpCuenta.Height + 12;
 
-            panelPrincipal.Controls.Add(CrearLabel("Rol:", 20, y));
+            // Grupo: Datos personales y rol
+            GroupBox grpPersonal = new GroupBox
+            {
+                Text = "  Datos personales y rol  ",
+                Font = UITheme.FontSubtitle,
+                ForeColor = UITheme.TextPrimary,
+                Location = new Point(16, y),
+                Size = new Size(440, 182),
+                BackColor = UITheme.PanelBackground
+            };
+            yGrp = 28;
+            grpPersonal.Controls.Add(CrearLabel("Nombre completo:", 12, yGrp));
+            txtNombreCompleto = CrearTextBox(12, yGrp + 24, 416);
+            grpPersonal.Controls.Add(txtNombreCompleto);
+            yGrp += 64;
+            grpPersonal.Controls.Add(CrearLabel("Rol:", 12, yGrp));
             cboRol = new ComboBox
             {
-                Font = new Font("Segoe UI", 10),
-                Location = new Point(20, y + 25),
-                Size = new Size(170, 25),
-                DropDownStyle = ComboBoxStyle.DropDownList
+                Font = UITheme.FontRegular,
+                Location = new Point(12, yGrp + 24),
+                Size = new Size(416, 30),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = UITheme.InputBackground,
+                ForeColor = UITheme.TextPrimary,
+                FlatStyle = FlatStyle.Flat,
+                IntegralHeight = true
             };
-            cboRol.Items.AddRange(new string[] { "Cajero", "Supervisor" });
+            cboRol.Items.AddRange(RolesPermisos.ObtenerRolesDisponibles().ToArray());
             cboRol.SelectedIndex = 0;
-            panelPrincipal.Controls.Add(cboRol);
+            grpPersonal.Controls.Add(cboRol);
 
             if (idUsuario.HasValue)
             {
                 chkActivo = new CheckBox
                 {
-                    Text = "Usuario Activo",
-                    Font = new Font("Segoe UI", 10),
-                    ForeColor = Color.White,
-                    Location = new Point(210, y + 28),
+                    Text = "Usuario activo",
+                    Font = UITheme.FontRegular,
+                    ForeColor = UITheme.TextPrimary,
+                    Location = new Point(12, yGrp + 58),
                     AutoSize = true,
                     Checked = true
                 };
-                panelPrincipal.Controls.Add(chkActivo);
+                grpPersonal.Controls.Add(chkActivo);
             }
-            y += 60;
+            panelPrincipal.Controls.Add(grpPersonal);
+            y += grpPersonal.Height + 12;
+
+            // En edición: información extra y botón cambiar contraseña
+            if (idUsuario.HasValue)
+            {
+                lblFechaCreacion = new Label
+                {
+                    Font = UITheme.FontSmall,
+                    ForeColor = UITheme.TextSecondary,
+                    Location = new Point(16, y),
+                    AutoSize = true
+                };
+                lblUltimoAcceso = new Label
+                {
+                    Font = UITheme.FontSmall,
+                    ForeColor = UITheme.TextSecondary,
+                    Location = new Point(16, y + 20),
+                    AutoSize = true
+                };
+                panelPrincipal.Controls.Add(lblFechaCreacion);
+                panelPrincipal.Controls.Add(lblUltimoAcceso);
+                y += 48;
+
+                btnCambiarPassword = new Button
+                {
+                    Text = "Cambiar contraseña",
+                    Font = UITheme.FontBold,
+                    Location = new Point(16, y),
+                    Size = new Size(180, 36),
+                    BackColor = UITheme.InfoColor,
+                    ForeColor = Color.White,
+                    FlatStyle = FlatStyle.Flat,
+                    Cursor = Cursors.Hand
+                };
+                btnCambiarPassword.FlatAppearance.BorderSize = 0;
+                btnCambiarPassword.Click += BtnCambiarPasswordEnEditor_Click;
+                panelPrincipal.Controls.Add(btnCambiarPassword);
+                y += 48;
+            }
+            else
+            {
+                y += 8;
+            }
+
+            // Botones Guardar / Cancelar
+            Button btnCancelar = new Button
+            {
+                Text = "Cancelar",
+                Font = UITheme.FontBold,
+                Location = new Point(248, y),
+                Size = new Size(120, 40),
+                BackColor = UITheme.DangerColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+            btnCancelar.FlatAppearance.BorderSize = 0;
+            btnCancelar.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
+            panelPrincipal.Controls.Add(btnCancelar);
 
             Button btnGuardar = new Button
             {
-                Text = "💾 GUARDAR",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(20, y),
-                Size = new Size(165, 40),
-                BackColor = Color.FromArgb(34, 139, 34),
+                Text = "Guardar",
+                Font = UITheme.FontBold,
+                Location = new Point(116, y),
+                Size = new Size(120, 40),
+                BackColor = UITheme.SuccessColor,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
@@ -412,21 +594,8 @@ namespace SistemaPOS.Forms
             btnGuardar.Click += BtnGuardar_Click;
             panelPrincipal.Controls.Add(btnGuardar);
 
-            Button btnCancelar = new Button
-            {
-                Text = "✗ CANCELAR",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(205, y),
-                Size = new Size(165, 40),
-                BackColor = Color.FromArgb(139, 0, 0),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnCancelar.FlatAppearance.BorderSize = 0;
-            btnCancelar.Click += (s, e) => this.DialogResult = DialogResult.Cancel;
-            panelPrincipal.Controls.Add(btnCancelar);
-
+            this.AcceptButton = btnGuardar;
+            this.CancelButton = btnCancelar;
             this.Controls.Add(panelPrincipal);
         }
 
@@ -435,8 +604,8 @@ namespace SistemaPOS.Forms
             return new Label
             {
                 Text = texto,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.White,
+                Font = UITheme.FontBold,
+                ForeColor = UITheme.TextPrimary,
                 Location = new Point(x, y),
                 AutoSize = true
             };
@@ -444,12 +613,14 @@ namespace SistemaPOS.Forms
 
         private TextBox CrearTextBox(int x, int y, int width)
         {
-            return new TextBox
+            var txt = new TextBox
             {
-                Font = new Font("Segoe UI", 10),
+                Font = UITheme.FontRegular,
                 Location = new Point(x, y),
-                Size = new Size(width, 25)
+                Size = new Size(width, 28)
             };
+            UITheme.StyleTextBox(txt);
+            return txt;
         }
 
         private void CargarUsuario()
@@ -461,25 +632,66 @@ namespace SistemaPOS.Forms
             {
                 txtUsuario.Text = usuario.NombreUsuario;
                 txtNombreCompleto.Text = usuario.NombreCompleto;
-                cboRol.SelectedItem = usuario.Rol;
+                var idx = cboRol.Items.IndexOf(usuario.Rol);
+                cboRol.SelectedIndex = idx >= 0 ? idx : 0;
                 if (chkActivo != null)
                     chkActivo.Checked = usuario.Activo;
+                if (lblFechaCreacion != null)
+                    lblFechaCreacion.Text = "Creado: " + usuario.FechaCreacion.ToString("dd/MM/yyyy HH:mm");
+                if (lblUltimoAcceso != null)
+                    lblUltimoAcceso.Text = "Último acceso: " + (usuario.UltimoAcceso.HasValue ? usuario.UltimoAcceso.Value.ToString("dd/MM/yyyy HH:mm") : "Nunca");
             }
+        }
+
+        private void BtnCambiarPasswordEnEditor_Click(object sender, EventArgs e)
+        {
+            if (!idUsuario.HasValue) return;
+            bool esPropio = SesionActual.UsuarioActivo != null && SesionActual.UsuarioActivo.IdUsuario == idUsuario.Value;
+            if (esPropio && !SesionActual.TienePermiso(Permiso.CambiarPropiaContraseña))
+            {
+                MessageBox.Show("No tiene permisos para cambiar su contraseña.", "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!esPropio && !SesionActual.TienePermiso(Permiso.CambiarContraseñas))
+            {
+                MessageBox.Show("No tiene permisos para cambiar contraseñas de otros usuarios.", "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            string nombreDisplay = txtNombreCompleto.Text.Trim();
+            if (string.IsNullOrEmpty(nombreDisplay)) nombreDisplay = txtUsuario.Text;
+            var frm = new CambiarPasswordForm(idUsuario.Value, nombreDisplay);
+            if (frm.ShowDialog() == DialogResult.OK)
+                MessageBox.Show("Contraseña actualizada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void BtnGuardar_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtUsuario.Text))
+            string usuario = txtUsuario.Text.Trim();
+            string nombreCompleto = txtNombreCompleto.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(usuario))
             {
-                MessageBox.Show("El nombre de usuario es obligatorio.", "Campo Requerido",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("El nombre de usuario es obligatorio.", "Campo requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtUsuario.Focus();
+                return;
+            }
+            if (usuario.Length < MinLongitudUsuario)
+            {
+                MessageBox.Show(string.Format("El usuario debe tener al menos {0} caracteres.", MinLongitudUsuario), "Datos inválidos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtUsuario.Focus();
+                return;
+            }
+            if (usuario.Contains(" "))
+            {
+                MessageBox.Show("El nombre de usuario no puede contener espacios.", "Datos inválidos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtUsuario.Focus();
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(txtNombreCompleto.Text))
+            if (string.IsNullOrWhiteSpace(nombreCompleto))
             {
-                MessageBox.Show("El nombre completo es obligatorio.", "Campo Requerido",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("El nombre completo es obligatorio.", "Campo requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtNombreCompleto.Focus();
                 return;
             }
 
@@ -487,25 +699,46 @@ namespace SistemaPOS.Forms
             {
                 if (string.IsNullOrWhiteSpace(txtPassword.Text))
                 {
-                    MessageBox.Show("La contraseña es obligatoria.", "Campo Requerido",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("La contraseña es obligatoria.", "Campo requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtPassword.Focus();
                     return;
                 }
-
+                if (txtPassword.Text.Length < MinLongitudPassword)
+                {
+                    MessageBox.Show(string.Format("La contraseña debe tener al menos {0} caracteres.", MinLongitudPassword), "Datos inválidos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtPassword.Focus();
+                    return;
+                }
                 if (txtPassword.Text != txtConfirmarPassword.Text)
                 {
-                    MessageBox.Show("Las contraseñas no coinciden.", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Las contraseñas no coinciden.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    txtConfirmarPassword.Focus();
                     return;
                 }
 
-                bool exito = UsuarioService.CrearUsuario(
-                    txtUsuario.Text.Trim(),
-                    txtPassword.Text,
-                    txtNombreCompleto.Text.Trim(),
-                    cboRol.SelectedItem.ToString()
-                );
+                try
+                {
+                    bool exito = UsuarioService.CrearUsuario(usuario, txtPassword.Text, nombreCompleto, cboRol.SelectedItem.ToString());
+                    if (exito)
+                    {
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                    else
+                    {
+                        MessageBox.Show("No se pudo crear el usuario. El nombre de usuario podría estar en uso.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return;
+            }
 
+            try
+            {
+                bool exito = UsuarioService.ActualizarUsuario(idUsuario.Value, nombreCompleto, cboRol.SelectedItem.ToString(), chkActivo.Checked);
                 if (exito)
                 {
                     this.DialogResult = DialogResult.OK;
@@ -513,29 +746,12 @@ namespace SistemaPOS.Forms
                 }
                 else
                 {
-                    MessageBox.Show("Error al crear el usuario. El nombre de usuario podría estar duplicado.",
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No se pudo actualizar el usuario.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                bool exito = UsuarioService.ActualizarUsuario(
-                    idUsuario.Value,
-                    txtNombreCompleto.Text.Trim(),
-                    cboRol.SelectedItem.ToString(),
-                    chkActivo.Checked
-                );
-
-                if (exito)
-                {
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
-                else
-                {
-                    MessageBox.Show("Error al actualizar el usuario.", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
@@ -555,28 +771,29 @@ namespace SistemaPOS.Forms
         private void InitializeComponent(string nombreUsuario)
         {
             this.Text = "Cambiar Contraseña";
-            this.Size = new Size(400, 280);
+            this.Size = new Size(500, 450);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.BackColor = Color.FromArgb(37, 37, 38);
+            
+            UITheme.ApplyTheme(this);
 
             Panel panelPrincipal = new Panel
             {
                 Location = new Point(20, 20),
-                Size = new Size(340, 210),
+                Size = new Size(440, 360),
                 BackColor = Color.FromArgb(45, 45, 48)
             };
 
             Label lblTitulo = new Label
             {
-                Text = $"Cambiar contraseña de:\n{nombreUsuario}",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Text = string.Format("Cambiar contraseña de:\n{0}", nombreUsuario),
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 ForeColor = Color.White,
                 Location = new Point(20, 20),
                 AutoSize = false,
-                Size = new Size(300, 50),
+                Size = new Size(400, 60),
                 TextAlign = ContentAlignment.MiddleCenter
             };
             panelPrincipal.Controls.Add(lblTitulo);
@@ -584,18 +801,18 @@ namespace SistemaPOS.Forms
             Label lblNueva = new Label
             {
                 Text = "Nueva Contraseña:",
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = Color.White,
-                Location = new Point(20, 80),
+                Location = new Point(20, 100),
                 AutoSize = true
             };
             panelPrincipal.Controls.Add(lblNueva);
 
             txtNuevaPassword = new TextBox
             {
-                Font = new Font("Segoe UI", 10),
-                Location = new Point(20, 105),
-                Size = new Size(300, 25),
+                Font = new Font("Segoe UI", 12),
+                Location = new Point(20, 130),
+                Size = new Size(400, 30),
                 UseSystemPasswordChar = true
             };
             panelPrincipal.Controls.Add(txtNuevaPassword);
@@ -603,18 +820,18 @@ namespace SistemaPOS.Forms
             Label lblConfirmar = new Label
             {
                 Text = "Confirmar Contraseña:",
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = Color.White,
-                Location = new Point(20, 135),
+                Location = new Point(20, 180),
                 AutoSize = true
             };
             panelPrincipal.Controls.Add(lblConfirmar);
 
             txtConfirmarPassword = new TextBox
             {
-                Font = new Font("Segoe UI", 10),
-                Location = new Point(20, 160),
-                Size = new Size(300, 25),
+                Font = new Font("Segoe UI", 12),
+                Location = new Point(20, 210),
+                Size = new Size(400, 30),
                 UseSystemPasswordChar = true
             };
             panelPrincipal.Controls.Add(txtConfirmarPassword);
@@ -622,9 +839,9 @@ namespace SistemaPOS.Forms
             Button btnGuardar = new Button
             {
                 Text = "💾 CAMBIAR",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(20, 195),
-                Size = new Size(140, 35),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Location = new Point(20, 280),
+                Size = new Size(180, 45),
                 BackColor = Color.FromArgb(34, 139, 34),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -637,9 +854,9 @@ namespace SistemaPOS.Forms
             Button btnCancelar = new Button
             {
                 Text = "✗ CANCELAR",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(180, 195),
-                Size = new Size(140, 35),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Location = new Point(240, 280),
+                Size = new Size(180, 45),
                 BackColor = Color.FromArgb(139, 0, 0),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,

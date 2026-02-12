@@ -1,180 +1,374 @@
 using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Linq;
+using System.Collections.Generic;
 using SistemaPOS.Models;
+using SistemaPOS.Data;
+using SistemaPOS.Services;
+using SistemaPOS.Helpers;
 
 namespace SistemaPOS.Forms
 {
     public partial class MainForm : Form
     {
-        private Panel panelMenu;
-        private Panel panelContenido;
-        private Label lblUsuario;
+        private DataGridView dgvCola;
+        private Timer tmrMonitor;
+        private Label lblTotalUsuarios;
+        private Label lblUsuariosActivos;
+        private Label lblNuevosMes;
+        private FlowLayoutPanel pnlAlertas;
+        private Label lblAlertaTitulo;
 
         public MainForm()
         {
             InitializeComponent();
             this.WindowState = FormWindowState.Maximized;
-            this.Text = "Sistema POS - Menú Principal";
-            ConfigurarMenuSegunRol();
+            this.Text = "Sistema POS - Control de Caja";
+            IniciarMonitor();
         }
 
         private void InitializeComponent()
         {
             this.Size = new Size(1200, 700);
-            };:oUs.Rol}",
- = new Font("Segoe UI", 11, FontStyle.Bold),
-                              Location = new Point(20, 20),
+            this.BackColor = UITheme.DarkBackground;
 
-            };
-
-               reColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                              Anchor = AnchorStyles.Top | AnchorStyles.Right
-
-            p
-r = Color.FromArgb(45, 45, 48)
-            };ck = DockStyle.Fill,
-                BackColor = Color.FromArgb(30, 30, 30)
-            };
-
-            this.Controls. 
-
-Menu("🛒 PUNTO DE VENTA", y);
-            btnPuntoVenta.Click += (s, e) => AbrirFormulario(new PuntoVentaForm());
-            panelMenu.Controls.Add(btnPuntoVenta);
-            y += 55;
-
-            if (SesionActual.EsSupervisor())
+            // Layout Principal
+            TableLayoutPanel mainLayout = new TableLayoutPanel
             {
-                // Separador
-                Label separador1 = new Label
-                {
-                    Text = "━━━━━━━━━━━━━━━━",
-                    ForeColor = Color.Gray,
-                    AutoSize = false,
-                    Size = new Size(200, 20),
-                    Location = new Point(10, y),
-                    TextAlign = ContentAlignment.MiddleCenter
-                };
-            Cra= 30;
-       
-                Button btnInventario = CrearBotonMenu("📦 INVENTARIO", y);
-                btnInventario.Click += (s, e) => AbrirFormulario(new InventarioForm());
-                panelMenu.Controls.Add(btnInventario);
-                y += 55;
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                Padding = new Padding(10)
+            };
+            mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70)); // Izquierda: Cola
+            mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30)); // Derecha: KPIs
 
-                // Botón Reportes
-                Button btnReportes = CrearBotonMenu("📊 REPORTES", y);
-                btnReportes.Click += (s, e) => AbrirFormulario(new ReportesForm());
-                panelMenu.Controls.Add(btnReportes);
-                y += 55;
+            // --- SECCIÓN IZQUIERDA: COLA DE COBRO ---
+            Panel pnlCola = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(45, 45, 48), // Oscuro
+                Padding = new Padding(10)
+            };
 
-                // Botón Usuarios
-                Button btnUsuarios = CrearBotonMenu("👥 USUARIOS", y);
-                btnUsuarios.Click += (s, e) => AbrirFormulario(new UsuariosForm());
-                panelMenu.Controls.Add(btnUsuarios);
-                y += 55;
+            Label lblTituloCola = new Label
+            {
+                Text = "COLA DE COBRO (PENDIENTES)",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                ForeColor = Color.White,
+                Dock = DockStyle.Top,
+                Height = 40
+            };
 
-                // Separador
-                Label separador2 = new Label
-                {
-             ━━ ForeColor = Color.Gray,           AutoSize = false,
-       (200, 20),
-                    Location = new Point(10, y),
-                    TextAlign = ContentAlignment.MiddleCenter
-                };
-                panelMenu.Controls.Add(separador2);
-                y += 30;
+            dgvCola = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                ReadOnly = true,
+                Font = new Font("Segoe UI", 12)
+            };
 
-                // Botón Backup
-                Button btnBackup = CrearBotonMenu("💾 BACKUP", y);
-                btnBackup.Click += BtnBackup_Click;
-                panelMenu.Controls.Add(btnBackup);
+            // Aplicar estilo del tema
+            UITheme.StyleDataGridView(dgvCola);
+
+            dgvCola.Columns.Add("Id", "Pedido #");
+            dgvCola.Columns.Add("Vendedor", "Vendedor");
+            dgvCola.Columns.Add("Total", "Monto Total");
+            dgvCola.Columns.Add("Tiempo", "Tiempo en espera");
+
+            dgvCola.CellDoubleClick += DgvCola_CellDoubleClick;
+
+            // --- PANEL DE ALERTAS DE STOCK (parte inferior izquierda) ---
+            Panel pnlAlertaContenedor = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 140,
+                BackColor = Color.FromArgb(35, 35, 38),
+                Padding = new Padding(10, 5, 10, 5)
+            };
+
+            lblAlertaTitulo = new Label
+            {
+                Text = "ALERTAS DE STOCK",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = UITheme.WarningColor,
+                Dock = DockStyle.Top,
+                Height = 25
+            };
+
+            pnlAlertas = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = true,
+                BackColor = Color.Transparent
+            };
+
+            pnlAlertaContenedor.Controls.Add(pnlAlertas);
+            pnlAlertaContenedor.Controls.Add(lblAlertaTitulo);
+
+            pnlCola.Controls.Add(dgvCola);
+            pnlCola.Controls.Add(pnlAlertaContenedor);
+            pnlCola.Controls.Add(lblTituloCola);
+
+            // --- SECCIÓN DERECHA: KPIs y BOTONES ---
+            FlowLayoutPanel pnlDerecha = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+
+            // KPIs
+            pnlDerecha.Controls.Add(CrearTarjetaKPI("Clientes Registrados", ref lblTotalUsuarios));
+            pnlDerecha.Controls.Add(CrearTarjetaKPI("Activos", ref lblUsuariosActivos));
+            pnlDerecha.Controls.Add(CrearTarjetaKPI("Nuevos del mes", ref lblNuevosMes));
+
+            // Espaciador
+            pnlDerecha.Controls.Add(new Panel { Height = 40, Width = 10 });
+
+            // Botones Rápidos - SOLO PARA ROLES CON PERMISOS
+            if (SesionActual.TienePermiso(Permiso.EditarProductos))
+            {
+                pnlDerecha.Controls.Add(CrearBotonAcceso("Gestión de Productos", () => AbrirForm(new InventarioForm())));
             }
 
-            // Mostrar mensaje de bienvenida
-            MostrarBienvenida();
+            if (SesionActual.TienePermiso(Permiso.VerUsuarios))
+            {
+                pnlDerecha.Controls.Add(CrearBotonAcceso("Usuarios", () => AbrirForm(new UsuariosForm())));
+            }
+
+            if (SesionActual.TienePermiso(Permiso.CrearPedidos))
+            {
+                pnlDerecha.Controls.Add(CrearBotonAcceso("Terminal Venta", () => AbrirForm(new TerminalVentaForm())));
+            }
+
+            pnlDerecha.Controls.Add(CrearBotonAcceso("Cerrar Sesión", CerrarSesion));
+
+            mainLayout.Controls.Add(pnlCola, 0, 0);
+            mainLayout.Controls.Add(pnlDerecha, 1, 0);
+
+            this.Controls.Add(mainLayout);
         }
 
-        private Button CrearBotonMenu(string texto, int y)
+        private Panel CrearTarjetaKPI(string titulo, ref Label lblValor)
+        {
+            Panel card = new Panel
+            {
+                Size = new Size(300, 100),
+                BackColor = Color.White,
+                Margin = new Padding(0, 0, 0, 15),
+                Padding = new Padding(10)
+            };
+
+            Label lblTitle = new Label
+            {
+                Text = titulo.ToUpper(),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = Color.Gray,
+                Dock = DockStyle.Top
+            };
+
+            lblValor = new Label
+            {
+                Text = "0",
+                Font = new Font("Segoe UI", 24, FontStyle.Bold),
+                ForeColor = Color.Black,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleRight
+            };
+
+            card.Controls.Add(lblValor);
+            card.Controls.Add(lblTitle);
+            return card;
+        }
+
+        private Button CrearBotonAcceso(string texto, Action accion)
         {
             Button btn = new Button
             {
-                Text = texto, Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                Size = new Size(200, 45), Location = new Point(10, y),
-                BackColor = Color.FromArgb(63, 63, 70), ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft,
+                Text = texto,
+                Size = new Size(300, 60),
+                BackColor = Color.FromArgb(60, 60, 60),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Margin = new Padding(0, 0, 0, 10),
                 Cursor = Cursors.Hand
             };
             btn.FlatAppearance.BorderSize = 0;
-            btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(0, 122, 204);
-            btn.MouseLeave += (s, e) => btn.BackColor = Color.FromArgb(63, 63, 70);
+            btn.Click += (s, e) => accion();
             return btn;
         }
 
-        private void AbrirFormulario(Form formulario)
+        private void IniciarMonitor()
         {
-            panelContenido.Controls.Clear();
-            formulario.TopLevel = false;
-            formulario.FormBorderStyle = FormBorderStyle.None;
-            formulario.Dock = DockStyle.Fill;
-            panelContenido.Controls.Add(formulario);
-            formulario.Show();
+            tmrMonitor = new Timer { Interval = 5000 }; // 5 segundos
+            tmrMonitor.Tick += (s, e) => ActualizarDatos();
+            tmrMonitor.Start();
+            ActualizarDatos(); // Primera carga
         }
 
-        private void MostrarBienvenida()
+        private void ActualizarDatos()
         {
-            Label lblBienvenida = new Label
+            // 1. Actualizar Cola
+            var pendientes = PedidoService.ObtenerPendientes();
+            dgvCola.Rows.Clear();
+            foreach (var p in pendientes)
             {
-                Text = $"¡Bienvenido, {SesionActual.UsuarioActivo.NombreCompl Si
-                Font = new Font("Segoe UI", 16),
-                ForeColor = Color.White,
-             600, 150),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            lblBienvenida.Location = new Point(
-                (panelContenido.Width - lblBienvenida.Width) / 2,
-                (panelContenido.Height - lblBienvenida.Height) / 2
-            );
-            panelContenido.Con
+                TimeSpan espera = DateTime.Now - p.Fecha;
+                string tiempoTexto = string.Format("{0} min {1} seg", (int)espera.TotalMinutes, espera.Seconds);
+                
+                dgvCola.Rows.Add(p.IdPedido, p.NombreVendedor, p.Total.ToString("C"), tiempoTexto);
+            }
 
-        private void BtnCerrarSesion_CsgeBoxButtons.YesNo,
-                MessageBoxIcon.Question
-            );
+            // 2. Actualizar KPIs (Usando Usuarios como proxy de Clientes según requerimiento)
+            var usuarios = UsuarioService.ObtenerTodosLosUsuarios();
+            lblTotalUsuarios.Text = usuarios.Count.ToString();
+            lblUsuariosActivos.Text = usuarios.Count(u => u.Activo).ToString();
+            lblNuevosMes.Text = usuarios.Count(u => u.FechaCreacion.Month == DateTime.Now.Month && u.FechaCreacion.Year == DateTime.Now.Year).ToString();
 
-            if (result == DialogResult.Yes)
+            // 3. Actualizar Alertas de Stock
+            ActualizarAlertas();
+        }
+
+        private void ActualizarAlertas()
+        {
+            var productosBajoStock = ProductoService.ObtenerConBajoStock();
+            pnlAlertas.Controls.Clear();
+
+            if (productosBajoStock.Count == 0)
             {
-                SesionActual.CerrarSesion();
-                this.Hide();
-                LoginForm loginForm = new LoginForm();
-                loginForm.FormClosed += (s, args) => this.Close();
-                loginForm.Show();
+                lblAlertaTitulo.Text = "SIN ALERTAS DE STOCK";
+                lblAlertaTitulo.ForeColor = UITheme.SuccessColor;
+                pnlAlertas.Controls.Add(new Label
+                {
+                    Text = "Todos los productos tienen stock suficiente",
+                    Font = new Font("Segoe UI", 10),
+                    ForeColor = UITheme.TextSecondary,
+                    AutoSize = true,
+                    Margin = new Padding(5)
+                });
+                return;
+            }
+
+            lblAlertaTitulo.Text = string.Format("ALERTAS DE STOCK ({0})", productosBajoStock.Count);
+            lblAlertaTitulo.ForeColor = UITheme.WarningColor;
+
+            foreach (var p in productosBajoStock)
+            {
+                bool sinStock = p.SinStock();
+                Color colorFondo = sinStock ? Color.FromArgb(80, 220, 53, 69) : Color.FromArgb(80, 255, 193, 7);
+                Color colorBorde = sinStock ? UITheme.DangerColor : UITheme.WarningColor;
+                string icono = sinStock ? "AGOTADO" : "BAJO";
+
+                Panel card = new Panel
+                {
+                    Size = new Size(220, 90),
+                    BackColor = Color.FromArgb(50, 50, 55),
+                    Margin = new Padding(5),
+                    Padding = new Padding(8)
+                };
+
+                // Barra lateral de color indicador
+                Panel barra = new Panel
+                {
+                    Dock = DockStyle.Left,
+                    Width = 4,
+                    BackColor = colorBorde
+                };
+
+                Label lblEstado = new Label
+                {
+                    Text = icono,
+                    Font = new Font("Segoe UI", 8, FontStyle.Bold),
+                    ForeColor = Color.White,
+                    BackColor = colorBorde,
+                    AutoSize = false,
+                    Size = new Size(65, 18),
+                    Location = new Point(18, 8),
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+
+                Label lblNombre = new Label
+                {
+                    Text = p.Nombre,
+                    Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                    ForeColor = Color.White,
+                    AutoSize = false,
+                    Size = new Size(190, 22),
+                    Location = new Point(18, 30)
+                };
+
+                Label lblDetalle = new Label
+                {
+                    Text = string.Format("Stock: {0}  |  Min: {1}", p.StockActual, p.StockMinimo),
+                    Font = new Font("Segoe UI", 9),
+                    ForeColor = UITheme.TextSecondary,
+                    AutoSize = false,
+                    Size = new Size(190, 20),
+                    Location = new Point(18, 55)
+                };
+
+                card.Controls.Add(lblEstado);
+                card.Controls.Add(lblNombre);
+                card.Controls.Add(lblDetalle);
+                card.Controls.Add(barra);
+
+                pnlAlertas.Controls.Add(card);
             }
         }
-        private void BtnBackup_Click(object sender, EventArgs e)
+
+        private void DgvCola_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            t
-                SaveFileDialog saveDialog = new SaveFileDialog
+            if (e.RowIndex >= 0)
+            {
+                int idPedido = Convert.ToInt32(dgvCola.Rows[e.RowIndex].Cells[0].Value);
+                ProcesarCobro(idPedido);
+            }
+        }
+
+        private void ProcesarCobro(int idPedido)
+        {
+            var pedido = PedidoService.ObtenerPedidoPorId(idPedido);
+            if (pedido != null)
+            {
+                // Convertir DetallePedido a ItemVenta para el formulario de cobro
+                var items = new List<ItemVenta>();
+                foreach (var det in pedido.Detalles)
                 {
-                    Filter = "Database files (*.db)|*.db",
-                    FileName = $"backup_pos_{DateTime.Now:yyyyMMdd_HHmmss}.db",
-                    Title = "Guardar Backup de la Base de Datos"
-                };
-.ShowDialog() == DialogResult.OK)
+                    items.Add(new ItemVenta(det.Producto, det.Cantidad));
+                }
+
+                // Abrir CobrarForm pasando el ID del pedido para que se actualice a PAGADO
+                using (var form = new CobrarForm(items, 0.19m, idPedido))
                 {
-                    DatabaseHelper.Bacexo   MessageBoxIcon.Information
-                    );
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        ActualizarDatos(); // Refrescar cola inmediatamente
+                    }
                 }
             }
-            catch (Exception ex)
+        }
+
+        private void AbrirForm(Form form)
+        {
+            form.StartPosition = FormStartPosition.CenterScreen;
+            form.ShowDialog();
+            ActualizarDatos();
+        }
+
+        private void CerrarSesion()
+        {
+            if (MessageBox.Show("¿Cerrar sesión?", "Confirmar", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                MessageBox.Show(
-                    $"Error al crear backup: {ex.Message}",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
+                SesionActual.CerrarSesion();
+                if (tmrMonitor != null) tmrMonitor.Stop();
+                this.Close();
             }
         }
     }

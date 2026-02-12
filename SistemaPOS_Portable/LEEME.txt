@@ -1,0 +1,20 @@
+==========================================
+  SISTEMA POS - VERSION PORTABLE
+==========================================
+
+Esta carpeta contiene todo lo necesario para ejecutar el Sistema POS.
+No requiere instalacion de librerias adicionales.
+
+REQUISITOS:
+- Windows 7, 8, 10 u 11
+- .NET Framework 4.7.2 o superior (viene instalado por defecto en Windows 10/11)
+
+INSTRUCCIONES:
+1. Copie esta carpeta completa al PC de destino.
+2. Ejecute "SistemaPOS.exe".
+
+DATOS:
+La base de datos se creara automaticamente en:
+%AppData%\SistemaPOS\pos_database.db
+
+Si desea reiniciar la base de datos, puede borrar ese archivo.

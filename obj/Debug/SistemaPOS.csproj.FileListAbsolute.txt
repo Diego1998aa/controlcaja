@@ -1,0 +1,2 @@
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.AssemblyReference.cache
+C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.CoreCompileInputs.cache

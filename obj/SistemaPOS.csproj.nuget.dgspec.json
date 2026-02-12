@@ -1,0 +1,56 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\SistemaPOS.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\SistemaPOS.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\SistemaPOS.csproj",
+        "projectName": "SistemaPOS",
+        "projectPath": "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\SistemaPOS.csproj",
+        "packagesPath": "C:\\Users\\marcelo aguilera\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\marcelo aguilera\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "dependencies": {
+            "System.Data.SQLite": {
+              "target": "Package",
+              "version": "[1.0.118, )"
+            }
+          }
+        }
+      }
+    }
+  }
+}

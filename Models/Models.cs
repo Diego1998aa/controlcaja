@@ -10,6 +10,8 @@ namespace SistemaPOS.Models
         public string NombreCompleto { get; set; }
         public string Rol { get; set; }
         public bool Activo { get; set; }
+        public DateTime FechaCreacion { get; set; }
+        public DateTime? UltimoAcceso { get; set; }
     }
 
     public class Producto
@@ -24,6 +26,17 @@ namespace SistemaPOS.Models
         public int StockActual { get; set; }
         public int StockMinimo { get; set; }
         public int IdCategoria { get; set; }
+        public string NombreCategoria { get; set; }
+        public string Estado { get; set; }
+
+        public Producto()
+        {
+            Estado = "Activo";
+        }
+
+        // Métodos auxiliares
+        public bool TieneBajoStock() { return StockActual > 0 && StockActual <= StockMinimo; }
+        public bool SinStock() { return StockActual <= 0; }
     }
 
     public class Categoria
@@ -52,7 +65,50 @@ namespace SistemaPOS.Models
     public static class SesionActual
     {
         public static Usuario UsuarioActivo { get; set; }
-        public static bool EsSupervisor() => UsuarioActivo != null && UsuarioActivo.Rol == "Supervisor";
-        public static void CerrarSesion() => UsuarioActivo = null;
+
+        /// <summary>
+        /// Verifica si el usuario actual es Supervisor
+        /// </summary>
+        public static bool EsSupervisor()
+        {
+            return UsuarioActivo != null && UsuarioActivo.Rol == RolesPermisos.Supervisor;
+        }
+
+        /// <summary>
+        /// Verifica si el usuario actual es Vendedor
+        /// </summary>
+        public static bool EsVendedor()
+        {
+            return UsuarioActivo != null && UsuarioActivo.Rol == RolesPermisos.Vendedor;
+        }
+
+        /// <summary>
+        /// Verifica si el usuario actual es Cajera
+        /// </summary>
+        public static bool EsCajera()
+        {
+            return UsuarioActivo != null && UsuarioActivo.Rol == RolesPermisos.Cajera;
+        }
+
+        /// <summary>
+        /// Verifica si el usuario actual tiene un permiso específico
+        /// </summary>
+        /// <param name="permiso">El permiso a verificar</param>
+        /// <returns>True si tiene el permiso, False en caso contrario</returns>
+        public static bool TienePermiso(Permiso permiso)
+        {
+            if (UsuarioActivo == null)
+                return false;
+
+            return RolesPermisos.TienePermiso(UsuarioActivo.Rol, permiso);
+        }
+
+        /// <summary>
+        /// Cierra la sesión del usuario actual
+        /// </summary>
+        public static void CerrarSesion()
+        {
+            UsuarioActivo = null;
+        }
     }
 }

@@ -38,8 +38,8 @@ namespace SistemaPOS.Forms
 
             Label lblTitulo = new Label { Text = "AJUSTE DE INVENTARIO", Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Color.White, Location = new Point(10, 10), AutoSize = true };
             
-            Label lblProd = new Label { Text = $"Producto: {nombreProducto}", Font = new Font("Segoe UI", 10), ForeColor = Color.LightGray, Location = new Point(10, 40), AutoSize = true };
-            Label lblStock = new Label { Text = $"Stock Actual: {stockActual}", Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White, Location = new Point(10, 65), AutoSize = true };
+            Label lblProd = new Label { Text = string.Format("Producto: {0}", nombreProducto), Font = new Font("Segoe UI", 10), ForeColor = Color.LightGray, Location = new Point(10, 40), AutoSize = true };
+            Label lblStock = new Label { Text = string.Format("Stock Actual: {0}", stockActual), Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White, Location = new Point(10, 65), AutoSize = true };
 
             Label lblTipo = new Label { Text = "Tipo de Movimiento:", ForeColor = Color.White, Location = new Point(10, 100), AutoSize = true };
             cboTipo = new ComboBox { Location = new Point(10, 120), Size = new Size(150, 25), DropDownStyle = ComboBoxStyle.DropDownList };
@@ -65,7 +65,8 @@ namespace SistemaPOS.Forms
 
         private void BtnGuardar_Click(object sender, EventArgs e)
         {
-            if (!int.TryParse(txtCantidad.Text, out int cantidad) || cantidad <= 0) { MessageBox.Show("Ingrese una cantidad válida."); return; }
+            int cantidad;
+            if (!int.TryParse(txtCantidad.Text, out cantidad) || cantidad <= 0) { MessageBox.Show("Ingrese una cantidad válida."); return; }
             
             string tipo = cboTipo.SelectedItem.ToString().Split(' ')[0]; // Entrada, Salida, Ajuste
             int nuevoStock = stockActual;
@@ -84,7 +85,7 @@ namespace SistemaPOS.Forms
                     try
                     {
                         // Actualizar Producto
-                        string sqlUpdate = "UPDATE Productos SET stock_actual = @stock WHERE id_producto = @id";
+                        string sqlUpdate = "UPDATE Productos SET StockActual = @stock WHERE IdProducto = @id";
                         using(var cmd = new SQLiteCommand(sqlUpdate, conn, trans)) {
                             cmd.Parameters.AddWithValue("@stock", nuevoStock);
                             cmd.Parameters.AddWithValue("@id", idProducto);
@@ -92,7 +93,7 @@ namespace SistemaPOS.Forms
                         }
 
                         // Registrar Movimiento
-                        string sqlMov = "INSERT INTO Movimientos_Inventario (id_producto, tipo_movimiento, cantidad, stock_anterior, stock_nuevo, motivo, id_usuario) VALUES (@id, @tipo, @cant, @ant, @nue, @mot, @user)";
+                        string sqlMov = "INSERT INTO Movimientos_Inventario (IdProducto, TipoMovimiento, Cantidad, StockAnterior, StockNuevo, Motivo, IdUsuario) VALUES (@id, @tipo, @cant, @ant, @nue, @mot, @user)";
                         using(var cmd = new SQLiteCommand(sqlMov, conn, trans)) {
                             cmd.Parameters.AddWithValue("@id", idProducto);
                             cmd.Parameters.AddWithValue("@tipo", tipo);

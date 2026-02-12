@@ -79,14 +79,28 @@ Sistema completo de Punto de Venta (POS) para Windows, desarrollado en C# con Wi
 
 ## 🔐 Primer Inicio de Sesión
 
-Al iniciar por primera vez, usa estas credenciales:
+Al iniciar por primera vez, usa estas credenciales (base recién creada):
 
 ```
 Usuario: admin
-Contraseña: admin123
+Contraseña: admin
 ```
 
-**⚠️ IMPORTANTE:** Cambia esta contraseña inmediatamente.
+Si la base de datos fue creada con otra versión del sistema, prueba también `admin123`.
+
+**⚠️ IMPORTANTE:** Cambia esta contraseña después del primer acceso.
+
+---
+
+## 🧪 Para correr pruebas
+
+1. **Compilar:** En Visual Studio → F6 (Compilar solución). En Cursor/VS Code, la tarea **"build"** usa `msbuild` (debe estar en el PATH; si no, compila desde Visual Studio).
+2. **Ejecutar:** F5 o elegir **"Iniciar SistemaPOS (Debug)"** en el selector de depuración. La app usa la base `pos_database.db` en la carpeta del .exe (`bin\Debug` o `bin\Release`).
+3. **Flujo sugerido para probar:**
+   - Login con **admin** / **admin**.
+   - **Terminal Venta:** crear ítems en el carrito → enviar a cola (crea un pedido PENDIENTE).
+   - En la **cola de cobro**, doble clic en un pedido → **Cobrar** (abre CobrarForm con ese pedido). Al confirmar, la venta se registra y el pedido pasa a PAGADO.
+   - Revisar **Reportes** y **Inventario** para ver ventas y movimientos.
 
 ## 📚 Guía de Uso
 
