@@ -69,7 +69,7 @@ namespace SistemaPOS.Services
                     NombreCompleto = row["NombreCompleto"].ToString(),
                     Rol = row["Rol"].ToString(),
                     Activo = Convert.ToBoolean(row["Activo"]),
-                    FechaCreacion = Convert.ToDateTime(row["FechaCreacion"]),
+                    FechaCreacion = row["FechaCreacion"] != DBNull.Value ? Convert.ToDateTime(row["FechaCreacion"]) : DateTime.Now,
                     UltimoAcceso = row["UltimoAcceso"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(row["UltimoAcceso"]) : null
                 });
             }

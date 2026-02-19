@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using SistemaPOS.Models;
@@ -14,8 +15,9 @@ namespace SistemaPOS.Forms
         private TextBox txtBuscar;
         private DataGridView dgvProductos;
         private Label lblTotal;
+        private Label lblCantItems;
         private List<ItemVenta> carrito;
-        
+
         public TerminalVentaForm()
         {
             carrito = new List<ItemVenta>();
@@ -27,112 +29,139 @@ namespace SistemaPOS.Forms
             this.Text = "Terminal de Venta - Pedidos";
             this.Size = new Size(1000, 700);
             this.BackColor = UITheme.DarkBackground;
-            this.KeyPreview = true; // Permitir capturar F12
+            this.KeyPreview = true;
             this.KeyDown += TerminalVentaForm_KeyDown;
+
+            // Header
+            Panel header = UITheme.CrearHeaderBar("Terminal de Venta", "Escanee o busque productos por código");
 
             // --- Panel Superior (Buscador) ---
             Panel panelTop = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 100,
-                Padding = new Padding(20),
-                BackColor = UITheme.PanelBackground
+                Height = 80,
+                Padding = new Padding(20, 15, 20, 10),
+                BackColor = UITheme.SurfaceColor
             };
 
             Label lblBuscar = new Label
             {
-                Text = "🔍 Buscar Producto (Código/SKU):",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Text = "\U0001F50D  Código / SKU del Producto:",
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 ForeColor = UITheme.TextSecondary,
                 Dock = DockStyle.Top,
-                Height = 30
+                Height = 25
             };
 
             txtBuscar = new TextBox
             {
-                Font = new Font("Segoe UI", 20, FontStyle.Bold),
-                Dock = DockStyle.Top,
-                Height = 50, // Altura visual aproximada
-                BackColor = Color.White,
-                ForeColor = Color.Black
+                Font = new Font("Segoe UI", 18, FontStyle.Bold),
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(55, 65, 81),
+                ForeColor = UITheme.TextPrimary,
+                BorderStyle = BorderStyle.FixedSingle
             };
             txtBuscar.KeyDown += TxtBuscar_KeyDown;
 
             panelTop.Controls.Add(txtBuscar);
             panelTop.Controls.Add(lblBuscar);
-            this.Controls.Add(panelTop);
 
             // --- Panel Inferior (Total y Botón) ---
             Panel panelBottom = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 100,
-                Padding = new Padding(20),
-                BackColor = UITheme.PanelBackground
+                Height = 90,
+                Padding = new Padding(20, 10, 20, 10),
+                BackColor = UITheme.SurfaceColor
+            };
+
+            // Separador superior
+            Panel sepBottom = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 2,
+                BackColor = UITheme.PrimaryColor
+            };
+            panelBottom.Controls.Add(sepBottom);
+
+            lblCantItems = new Label
+            {
+                Text = "0 productos en el carrito",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = UITheme.TextSecondary,
+                AutoSize = true,
+                Location = new Point(20, 18)
             };
 
             lblTotal = new Label
             {
-                Text = "Total: $0.00",
-                Font = new Font("Segoe UI", 24, FontStyle.Bold),
+                Text = "Total: $0",
+                Font = new Font("Segoe UI", 26, FontStyle.Bold),
                 ForeColor = UITheme.SuccessColor,
                 AutoSize = true,
-                Location = new Point(20, 30)
+                Location = new Point(20, 42)
             };
 
-            Button btnEnviar = new Button
+            RoundedButton btnEnviar = new RoundedButton
             {
-                Text = "ENVIAR A CAJA (F12)",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                BackColor = UITheme.PrimaryColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Dock = DockStyle.Right,
-                Width = 300,
-                Cursor = Cursors.Hand
+                Text = "ENVIAR A CAJA",
+                IconText = "\U0001F4E4",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                ButtonColor = UITheme.PrimaryColor,
+                HoverColor = UITheme.PrimaryLight,
+                PressColor = UITheme.PrimaryDark,
+                Size = new Size(280, 55),
+                Radius = 8
             };
-            btnEnviar.FlatAppearance.BorderSize = 0;
             btnEnviar.Click += BtnEnviar_Click;
 
+            // Posicionar el botón a la derecha
+            panelBottom.Resize += (s, e) =>
+            {
+                btnEnviar.Location = new Point(panelBottom.Width - btnEnviar.Width - 20, 18);
+            };
+
+            Label lblAtajo = new Label
+            {
+                Text = "F12",
+                Font = new Font("Segoe UI", 8, FontStyle.Bold),
+                ForeColor = UITheme.TextMuted,
+                BackColor = Color.FromArgb(55, 65, 81),
+                AutoSize = false,
+                Size = new Size(35, 18),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            panelBottom.Resize += (s2, e2) =>
+            {
+                lblAtajo.Location = new Point(panelBottom.Width - btnEnviar.Width - 60, 36);
+            };
+
+            panelBottom.Controls.Add(lblCantItems);
             panelBottom.Controls.Add(lblTotal);
             panelBottom.Controls.Add(btnEnviar);
-            this.Controls.Add(panelBottom);
+            panelBottom.Controls.Add(lblAtajo);
 
             // --- Grid Central ---
             dgvProductos = new DataGridView
             {
                 Dock = DockStyle.Fill,
-                BackgroundColor = UITheme.DarkBackground,
-                BorderStyle = BorderStyle.None,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
                 ReadOnly = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                RowHeadersVisible = false
+                Font = new Font("Segoe UI", 12)
             };
-            
-            // Estilos del Grid
-            dgvProductos.DefaultCellStyle.BackColor = UITheme.PanelBackground;
-            dgvProductos.DefaultCellStyle.ForeColor = UITheme.TextPrimary;
-            dgvProductos.DefaultCellStyle.SelectionBackColor = UITheme.PrimaryColor;
-            dgvProductos.DefaultCellStyle.Font = new Font("Segoe UI", 12);
-            dgvProductos.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 48);
-            dgvProductos.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvProductos.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-            dgvProductos.EnableHeadersVisualStyles = false;
+            UITheme.StyleDataGridView(dgvProductos);
+            dgvProductos.RowTemplate.Height = 42;
 
             dgvProductos.Columns.Add("Producto", "Producto");
             dgvProductos.Columns.Add("Precio", "Precio");
             dgvProductos.Columns.Add("Cantidad", "Cant.");
             dgvProductos.Columns.Add("Subtotal", "Subtotal");
-            
-            // Ajuste de columnas
-            dgvProductos.Columns[0].FillWeight = 50; // Nombre más ancho
-            dgvProductos.Columns[2].FillWeight = 15;
 
-            // Evento para eliminar con doble click
-            dgvProductos.CellDoubleClick += (s, e) => 
+            dgvProductos.Columns[0].FillWeight = 50;
+            dgvProductos.Columns[2].FillWeight = 12;
+
+            dgvProductos.CellDoubleClick += (s, e) =>
             {
                 if (e.RowIndex >= 0)
                 {
@@ -141,9 +170,24 @@ namespace SistemaPOS.Forms
                 }
             };
 
+            // Tip de eliminación
+            Label lblTip = new Label
+            {
+                Text = "Doble clic en un producto para eliminarlo del carrito",
+                Font = UITheme.FontSmall,
+                ForeColor = UITheme.TextMuted,
+                Dock = DockStyle.Bottom,
+                Height = 22,
+                Padding = new Padding(10, 0, 0, 0)
+            };
+
+            // Ensamblaje
             this.Controls.Add(dgvProductos);
-            
-            // Foco inicial
+            this.Controls.Add(lblTip);
+            this.Controls.Add(panelBottom);
+            this.Controls.Add(panelTop);
+            this.Controls.Add(header);
+
             this.Load += (s, e) => txtBuscar.Focus();
         }
 
@@ -165,7 +209,7 @@ namespace SistemaPOS.Forms
                     AgregarProducto(codigo);
                     txtBuscar.Clear();
                 }
-                e.SuppressKeyPress = true; // Evitar sonido de beep
+                e.SuppressKeyPress = true;
             }
         }
 
@@ -187,7 +231,7 @@ namespace SistemaPOS.Forms
             }
             else
             {
-                MessageBox.Show("Producto no encontrado", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Producto no encontrado", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -208,6 +252,7 @@ namespace SistemaPOS.Forms
             }
 
             lblTotal.Text = string.Format("Total: {0:C}", total);
+            lblCantItems.Text = string.Format("{0} producto{1} en el carrito", carrito.Count, carrito.Count != 1 ? "s" : "");
         }
 
         private void BtnEnviar_Click(object sender, EventArgs e)
@@ -221,13 +266,8 @@ namespace SistemaPOS.Forms
 
             try
             {
-                // Guardar como PENDIENTE
                 int idPedido = PedidoService.CrearPedido(SesionActual.UsuarioActivo.IdUsuario, carrito);
-
-                // Mostrar mensaje GIGANTE
                 MostrarMensajeExito(idPedido);
-
-                // Limpiar
                 carrito.Clear();
                 ActualizarGrid();
                 txtBuscar.Focus();
@@ -241,25 +281,48 @@ namespace SistemaPOS.Forms
         private void MostrarMensajeExito(int idPedido)
         {
             Form msgForm = new Form();
-            msgForm.Size = new Size(600, 400);
+            msgForm.Size = new Size(500, 350);
             msgForm.StartPosition = FormStartPosition.CenterScreen;
             msgForm.FormBorderStyle = FormBorderStyle.None;
-            msgForm.BackColor = Color.FromArgb(34, 139, 34); // Verde éxito
+            msgForm.BackColor = UITheme.DarkBackground;
 
-            Label lblTitulo = new Label
+            // Fondo con gradiente
+            msgForm.Paint += (s, e) =>
             {
-                Text = "✅ PEDIDO ENVIADO A CAJA",
-                Font = new Font("Segoe UI", 24, FontStyle.Bold),
+                using (LinearGradientBrush brush = new LinearGradientBrush(
+                    msgForm.ClientRectangle,
+                    Color.FromArgb(20, 83, 45),
+                    Color.FromArgb(22, 101, 52),
+                    LinearGradientMode.Vertical))
+                {
+                    e.Graphics.FillRectangle(brush, msgForm.ClientRectangle);
+                }
+            };
+
+            Label lblCheck = new Label
+            {
+                Text = "\u2705",
+                Font = new Font("Segoe UI Emoji", 48),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
                 Height = 100,
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
+            Label lblTitulo = new Label
+            {
+                Text = "PEDIDO ENVIADO A CAJA",
+                Font = new Font("Segoe UI", 18, FontStyle.Bold),
+                ForeColor = Color.White,
+                Dock = DockStyle.Top,
+                Height = 40,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
             Label lblNumero = new Label
             {
-                Text = "#" + idPedido,
-                Font = new Font("Segoe UI", 72, FontStyle.Bold),
+                Text = "Pedido #" + idPedido,
+                Font = new Font("Segoe UI", 48, FontStyle.Bold),
                 ForeColor = Color.White,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter
@@ -268,15 +331,16 @@ namespace SistemaPOS.Forms
             Label lblInstruccion = new Label
             {
                 Text = "Presione ENTER o ESC para continuar",
-                Font = new Font("Segoe UI", 14),
-                ForeColor = Color.WhiteSmoke,
+                Font = new Font("Segoe UI", 11),
+                ForeColor = Color.FromArgb(200, 255, 200),
                 Dock = DockStyle.Bottom,
-                Height = 50,
+                Height = 40,
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
             msgForm.Controls.Add(lblNumero);
             msgForm.Controls.Add(lblTitulo);
+            msgForm.Controls.Add(lblCheck);
             msgForm.Controls.Add(lblInstruccion);
 
             msgForm.KeyDown += (s, e) => {

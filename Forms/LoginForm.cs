@@ -1,4 +1,6 @@
 using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using SistemaPOS.Services;
 using SistemaPOS.Models;
@@ -8,6 +10,12 @@ namespace SistemaPOS.Forms
 {
     public partial class LoginForm : Form
     {
+        private ModernTextBox txtUsuario;
+        private ModernTextBox txtContraseña;
+        private RoundedButton btnIniciarSesion;
+        private Button btnVerClave;
+        private Label lblError;
+
         public LoginForm()
         {
             InitializeComponent();
@@ -20,127 +28,214 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Text = "Sistema POS - Inicio de Sesión";
-            this.Size = new System.Drawing.Size(600, 500);
+            this.Size = new Size(520, 620);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = UITheme.PanelBackground;
+            this.BackColor = UITheme.DarkBackground;
             this.ForeColor = UITheme.TextPrimary;
 
-            // Panel principal centrado
-            int pWidth = 450;
-            int pHeight = 350;
-            Panel panelPrincipal = new Panel
+            // Panel de fondo con gradiente
+            Panel fondoGradiente = new Panel
             {
-                Size = new System.Drawing.Size(pWidth, pHeight),
-                Location = new System.Drawing.Point((600 - pWidth)/2 - 10, (500 - pHeight)/2 - 30),
-                BackColor = UITheme.DarkBackground
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent
+            };
+            fondoGradiente.Paint += (s, e) =>
+            {
+                using (LinearGradientBrush brush = new LinearGradientBrush(
+                    fondoGradiente.ClientRectangle,
+                    Color.FromArgb(26, 32, 44),
+                    Color.FromArgb(17, 24, 39),
+                    LinearGradientMode.Vertical))
+                {
+                    e.Graphics.FillRectangle(brush, fondoGradiente.ClientRectangle);
+                }
             };
 
-            // Label título
+            // Panel central con fondo surface
+            RoundedPanel panelCentral = new RoundedPanel
+            {
+                Size = new Size(400, 480),
+                BackColor = UITheme.SurfaceColor,
+                Radius = 16,
+                BorderColor = UITheme.BorderColor,
+                BorderWidth = 1
+            };
+            panelCentral.Location = new Point((520 - 400) / 2 - 10, (620 - 480) / 2 - 20);
+
+            // Icono del sistema
+            Label lblIcono = new Label
+            {
+                Text = "\U0001F6D2",
+                Font = new Font("Segoe UI Emoji", 36),
+                AutoSize = false,
+                Size = new Size(400, 65),
+                Location = new Point(0, 20),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            // Título principal
             Label lblTitulo = new Label
             {
                 Text = "SISTEMA POS",
                 AutoSize = false,
-                Size = new System.Drawing.Size(pWidth, 50),
-                Location = new System.Drawing.Point(0, 20),
-                TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
-                Font = new System.Drawing.Font("Segoe UI", 18, System.Drawing.FontStyle.Bold)
+                Size = new Size(400, 35),
+                Location = new Point(0, 85),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 20, FontStyle.Bold),
+                ForeColor = UITheme.TextPrimary
             };
-            UITheme.StyleLabel(lblTitulo, UITheme.FontTitle);
+
+            // Subtítulo
+            Label lblSubtitulo = new Label
+            {
+                Text = "Punto de Venta",
+                AutoSize = false,
+                Size = new Size(400, 22),
+                Location = new Point(0, 118),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 11),
+                ForeColor = UITheme.TextSecondary
+            };
+
+            // Línea separadora
+            Panel lineaSeparadora = new Panel
+            {
+                Size = new Size(300, 1),
+                Location = new Point(50, 155),
+                BackColor = UITheme.BorderColor
+            };
 
             // Label usuario
             Label lblUsuario = new Label
             {
-                Text = "Usuario:",
+                Text = "USUARIO",
                 AutoSize = true,
-                Location = new System.Drawing.Point(50, 80),
-                Font = new System.Drawing.Font("Segoe UI", 12)
+                Location = new Point(40, 175),
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.TextSecondary
             };
-            UITheme.StyleLabel(lblUsuario, UITheme.FontRegular, UITheme.TextSecondary);
 
-            // TextBox usuario
-            txtUsuario = new TextBox
+            // TextBox usuario moderno
+            txtUsuario = new ModernTextBox("Ingrese su usuario", "\U0001F464")
             {
-                Size = new System.Drawing.Size(350, 35),
-                Location = new System.Drawing.Point(50, 105),
-                Font = new System.Drawing.Font("Segoe UI", 12)
+                Size = new Size(320, 42),
+                Location = new Point(40, 198)
             };
-            UITheme.StyleTextBox(txtUsuario);
 
             // Label contraseña
             Label lblContraseña = new Label
             {
-                Text = "Contraseña:",
+                Text = "CONTRASEÑA",
                 AutoSize = true,
-                Location = new System.Drawing.Point(50, 155),
-                Font = new System.Drawing.Font("Segoe UI", 12)
+                Location = new Point(40, 258),
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.TextSecondary
             };
-            UITheme.StyleLabel(lblContraseña, UITheme.FontRegular, UITheme.TextSecondary);
 
-            // TextBox contraseña
-            txtContraseña = new TextBox
+            // TextBox contraseña moderno
+            txtContraseña = new ModernTextBox("Ingrese su contraseña", "\U0001F512")
             {
-                Size = new System.Drawing.Size(310, 35),
-                Location = new System.Drawing.Point(50, 180),
-                UseSystemPasswordChar = true,
-                Font = new System.Drawing.Font("Segoe UI", 12)
+                Size = new Size(272, 42),
+                Location = new Point(40, 281)
             };
-            UITheme.StyleTextBox(txtContraseña);
+            txtContraseña.UseSystemPasswordChar = true;
+            txtContraseña.InnerKeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    BtnIniciarSesion_Click(s, e);
+                    e.SuppressKeyPress = true;
+                }
+            };
 
             // Botón mostrar/ocultar contraseña
             btnVerClave = new Button
             {
-                Text = "👁",
-                Size = new System.Drawing.Size(35, txtContraseña.Height),
-                Location = new System.Drawing.Point(365, 180),
+                Text = "\U0001F441",
+                Size = new Size(42, 42),
+                Location = new Point(318, 281),
                 FlatStyle = FlatStyle.Flat,
-                Font = new System.Drawing.Font("Segoe UI", 7),
-                BackColor = System.Drawing.Color.FromArgb(80, 80, 80),
-                ForeColor = System.Drawing.Color.White,
+                Font = new Font("Segoe UI Emoji", 10),
+                BackColor = Color.FromArgb(55, 65, 81),
+                ForeColor = UITheme.TextMuted,
                 Cursor = Cursors.Hand
             };
             btnVerClave.FlatAppearance.BorderSize = 0;
             btnVerClave.Click += BtnVerClave_Click;
 
-            // Botón iniciar sesión
-            btnIniciarSesion = new Button
+            // Mensaje de error
+            lblError = new Label
+            {
+                Text = "",
+                AutoSize = false,
+                Size = new Size(320, 22),
+                Location = new Point(40, 332),
+                Font = new Font("Segoe UI", 9),
+                ForeColor = UITheme.DangerColor,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Visible = false
+            };
+
+            // Botón iniciar sesión moderno
+            btnIniciarSesion = new RoundedButton
             {
                 Text = "INICIAR SESIÓN",
-                Size = new System.Drawing.Size(350, 50),
-                Location = new System.Drawing.Point(50, 250),
-                Font = new System.Drawing.Font("Segoe UI", 12, System.Drawing.FontStyle.Bold)
+                Size = new Size(320, 50),
+                Location = new Point(40, 362),
+                Font = new Font("Segoe UI", 13, FontStyle.Bold),
+                ButtonColor = UITheme.PrimaryColor,
+                HoverColor = UITheme.PrimaryLight,
+                PressColor = UITheme.PrimaryDark,
+                Radius = 8
             };
-            UITheme.StyleButton(btnIniciarSesion, UITheme.PrimaryColor);
             btnIniciarSesion.Click += BtnIniciarSesion_Click;
 
-            // Agregar controles
-            panelPrincipal.Controls.Add(lblTitulo);
-            panelPrincipal.Controls.Add(lblUsuario);
-            panelPrincipal.Controls.Add(txtUsuario);
-            panelPrincipal.Controls.Add(lblContraseña);
-            panelPrincipal.Controls.Add(txtContraseña);
-            panelPrincipal.Controls.Add(btnVerClave);
-            panelPrincipal.Controls.Add(btnIniciarSesion);
-            
-            this.Controls.Add(panelPrincipal);
-            this.AcceptButton = btnIniciarSesion;
-        }
+            // Versión
+            Label lblVersion = new Label
+            {
+                Text = "v1.0.0",
+                AutoSize = false,
+                Size = new Size(400, 20),
+                Location = new Point(0, 435),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 8),
+                ForeColor = UITheme.TextMuted
+            };
 
-        private TextBox txtUsuario;
-        private TextBox txtContraseña;
-        private Button btnIniciarSesion;
-        private Button btnVerClave;
+            // Agregar controles al panel central
+            panelCentral.Controls.Add(lblIcono);
+            panelCentral.Controls.Add(lblTitulo);
+            panelCentral.Controls.Add(lblSubtitulo);
+            panelCentral.Controls.Add(lineaSeparadora);
+            panelCentral.Controls.Add(lblUsuario);
+            panelCentral.Controls.Add(txtUsuario);
+            panelCentral.Controls.Add(lblContraseña);
+            panelCentral.Controls.Add(txtContraseña);
+            panelCentral.Controls.Add(btnVerClave);
+            panelCentral.Controls.Add(lblError);
+            panelCentral.Controls.Add(btnIniciarSesion);
+            panelCentral.Controls.Add(lblVersion);
+
+            fondoGradiente.Controls.Add(panelCentral);
+            this.Controls.Add(fondoGradiente);
+
+            this.Load += (s, e) => txtUsuario.Focus();
+        }
 
         private void BtnVerClave_Click(object sender, EventArgs e)
         {
             txtContraseña.UseSystemPasswordChar = !txtContraseña.UseSystemPasswordChar;
-            btnVerClave.Text = txtContraseña.UseSystemPasswordChar ? "👁" : "🔒";
+            btnVerClave.Text = txtContraseña.UseSystemPasswordChar ? "\U0001F441" : "\U0001F512";
         }
 
         private void BtnIniciarSesion_Click(object sender, EventArgs e)
         {
+            lblError.Visible = false;
+
             if (string.IsNullOrWhiteSpace(txtUsuario.Text) || string.IsNullOrWhiteSpace(txtContraseña.Text))
             {
-                MessageBox.Show("Por favor ingrese usuario y contraseña", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                lblError.Text = "Por favor ingrese usuario y contraseña";
+                lblError.Visible = true;
                 return;
             }
 
@@ -150,27 +245,24 @@ namespace SistemaPOS.Forms
                 SesionActual.UsuarioActivo = usuario;
                 this.Hide();
 
-                // FLUJO SEGÚN ROL
                 Form formPrincipal = null;
 
                 if (usuario.Rol == RolesPermisos.Vendedor)
                 {
-                    // Vendedor va directo a Terminal de Venta
-                    formPrincipal = new TerminalVentaForm();
+                    formPrincipal = new VendedorMainForm();
                 }
                 else if (usuario.Rol == RolesPermisos.Cajera)
                 {
-                    // Cajera va a MainForm (cola de cobro)
                     formPrincipal = new MainForm();
                 }
                 else if (usuario.Rol == RolesPermisos.Supervisor)
                 {
-                    // Supervisor va a MainForm con acceso completo
                     formPrincipal = new MainForm();
                 }
                 else
                 {
-                    MessageBox.Show("Rol de usuario no reconocido", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    lblError.Text = "Rol de usuario no reconocido";
+                    lblError.Visible = true;
                     this.Show();
                     return;
                 }
@@ -179,14 +271,13 @@ namespace SistemaPOS.Forms
                 {
                     if (SesionActual.UsuarioActivo == null)
                     {
-                        // Cerrar sesión: volver a mostrar login
                         txtUsuario.Clear();
                         txtContraseña.Clear();
+                        lblError.Visible = false;
                         this.Show();
                     }
                     else
                     {
-                        // Cierre normal de la app
                         this.Close();
                     }
                 };
@@ -194,7 +285,10 @@ namespace SistemaPOS.Forms
             }
             else
             {
-                MessageBox.Show("Usuario o contraseña incorrectos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                lblError.Text = "Usuario o contraseña incorrectos";
+                lblError.Visible = true;
+                txtContraseña.Clear();
+                txtContraseña.Focus();
             }
         }
     }

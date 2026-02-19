@@ -11,7 +11,7 @@ namespace SistemaPOS.Forms
     public partial class UsuariosForm : Form
     {
         private DataGridView dgvUsuarios;
-        private Button btnDesactivarReactivar;
+        private RoundedButton btnDesactivarReactivar;
 
         public UsuariosForm()
         {
@@ -31,49 +31,30 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Size = new Size(1000, 650);
-            this.BackColor = Color.FromArgb(30, 30, 30);
+            UITheme.ApplyTheme(this);
 
-            // Panel superior
-            Panel panelSuperior = new Panel
+            // HEADER BAR
+            var header = UITheme.CrearHeaderBar("Administración de Personal", "Gestión de usuarios del sistema");
+
+            // Panel de botones superiores (Nuevo Usuario)
+            Panel panelTop = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = UITheme.DarkBackground };
+
+            RoundedButton btnNuevo = new RoundedButton
             {
-                Location = new Point(10, 10),
-                Size = new Size(970, 60),
-                BackColor = Color.FromArgb(37, 37, 38)
+                Text = "➕ NUEVO USUARIO",
+                Location = new Point(820, 10),
+                Size = new Size(160, 40),
+                BackColor = UITheme.PrimaryColor,
+                ForeColor = Color.White
             };
-
-            Label lblTitulo = new Label
-            {
-                Text = "ADMINISTRACIÓN DE PERSONAL",
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(10, 10),
-                AutoSize = true
-            };
-            panelSuperior.Controls.Add(lblTitulo);
-
-            Button btnNuevoUsuario = new Button
-            {
-                Text = "Nuevo Usuario",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(800, 12),
-                Size = new Size(150, 35),
-                BackColor = Color.FromArgb(0, 122, 204),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnNuevoUsuario.FlatAppearance.BorderSize = 0;
-            btnNuevoUsuario.Click += BtnNuevoUsuario_Click;
-            panelSuperior.Controls.Add(btnNuevoUsuario);
-
-            this.Controls.Add(panelSuperior);
+            btnNuevo.Click += BtnNuevoUsuario_Click;
+            panelTop.Controls.Add(btnNuevo);
 
             // DataGridView de usuarios
             dgvUsuarios = new DataGridView
             {
-                Location = new Point(10, 80),
-                Size = new Size(970, 480),
-                BackgroundColor = Color.FromArgb(45, 45, 48),
+                Dock = DockStyle.Fill,
+                BackgroundColor = UITheme.DarkBackground,
                 BorderStyle = BorderStyle.None,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
@@ -82,83 +63,62 @@ namespace SistemaPOS.Forms
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 RowHeadersVisible = false
             };
-            ConfigurarEstiloGrid();
-            this.Controls.Add(dgvUsuarios);
+            UITheme.StyleDataGridView(dgvUsuarios);
+            ConfigurarColumnasGrid();
 
-            // Botones de acción
-            Button btnEditar = new Button
+            // Panel inferior con botones de acción
+            Panel panelBottom = new Panel { Dock = DockStyle.Bottom, Height = 70, BackColor = UITheme.PanelBackground };
+
+            RoundedButton btnEditar = new RoundedButton
             {
-                Text = "Editar",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(10, 570),
-                Size = new Size(150, 40),
-                BackColor = Color.FromArgb(255, 140, 0),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Text = "✏ EDITAR",
+                Location = new Point(20, 15),
+                Size = new Size(140, 40),
+                BackColor = UITheme.WarningColor
             };
-            btnEditar.FlatAppearance.BorderSize = 0;
             btnEditar.Click += BtnEditar_Click;
-            this.Controls.Add(btnEditar);
+            panelBottom.Controls.Add(btnEditar);
 
-            Button btnCambiarPassword = new Button
+            RoundedButton btnPassword = new RoundedButton
             {
-                Text = "Cambiar Contraseña",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(170, 570),
-                Size = new Size(180, 40),
-                BackColor = Color.FromArgb(70, 130, 180),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Text = "🔑 CAMBIAR CONTRASEÑA",
+                Location = new Point(170, 15),
+                Size = new Size(220, 40),
+                BackColor = UITheme.InfoColor
             };
-            btnCambiarPassword.FlatAppearance.BorderSize = 0;
-            btnCambiarPassword.Click += BtnCambiarPassword_Click;
-            this.Controls.Add(btnCambiarPassword);
+            btnPassword.Click += BtnCambiarPassword_Click;
+            panelBottom.Controls.Add(btnPassword);
 
-            btnDesactivarReactivar = new Button
+            btnDesactivarReactivar = new RoundedButton
             {
-                Text = "Desactivar",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(360, 570),
-                Size = new Size(150, 40),
-                BackColor = Color.FromArgb(139, 0, 0),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Text = "DESACTIVAR",
+                Location = new Point(400, 15),
+                Size = new Size(160, 40),
+                BackColor = UITheme.ErrorColor
             };
-            btnDesactivarReactivar.FlatAppearance.BorderSize = 0;
             btnDesactivarReactivar.Click += BtnDesactivarReactivar_Click;
-            this.Controls.Add(btnDesactivarReactivar);
-            dgvUsuarios.SelectionChanged += (s, e) => ActualizarBotonDesactivarReactivar();
+            panelBottom.Controls.Add(btnDesactivarReactivar);
 
-            Button btnActualizar = new Button
+            RoundedButton btnActualizar = new RoundedButton
             {
-                Text = "Actualizar",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Location = new Point(820, 570),
-                Size = new Size(150, 40),
-                BackColor = Color.FromArgb(34, 139, 34),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Text = "↻ ACTUALIZAR",
+                Location = new Point(820, 15),
+                Size = new Size(160, 40),
+                BackColor = UITheme.AccentColor
             };
-            btnActualizar.FlatAppearance.BorderSize = 0;
             btnActualizar.Click += (s, e) => CargarUsuarios();
-            this.Controls.Add(btnActualizar);
+            panelBottom.Controls.Add(btnActualizar);
+
+            // Orden correcto para WinForms Docking: Fill primero, luego Bottom, luego Top
+            this.Controls.Add(dgvUsuarios);
+            this.Controls.Add(panelBottom);
+            this.Controls.Add(panelTop);
+            this.Controls.Add(header);
+            dgvUsuarios.SelectionChanged += (s, e) => ActualizarBotonDesactivarReactivar();
         }
 
-        private void ConfigurarEstiloGrid()
+        private void ConfigurarColumnasGrid()
         {
-            dgvUsuarios.DefaultCellStyle.BackColor = Color.FromArgb(45, 45, 48);
-            dgvUsuarios.DefaultCellStyle.ForeColor = Color.White;
-            dgvUsuarios.DefaultCellStyle.SelectionBackColor = Color.FromArgb(0, 122, 204);
-            dgvUsuarios.DefaultCellStyle.SelectionForeColor = Color.White;
-            dgvUsuarios.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(37, 37, 38);
-            dgvUsuarios.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvUsuarios.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-            dgvUsuarios.EnableHeadersVisualStyles = false;
-
             dgvUsuarios.Columns.Clear();
             dgvUsuarios.Columns.Add("IdUsuario", "ID");
             dgvUsuarios.Columns.Add("Usuario", "Usuario");
@@ -185,16 +145,24 @@ namespace SistemaPOS.Forms
 
             foreach (var u in usuarios)
             {
-                string ultimoAcceso = u.UltimoAcceso.HasValue 
-                    ? u.UltimoAcceso.Value.ToString("dd/MM/yyyy HH:mm") 
+                string ultimoAcceso = u.UltimoAcceso.HasValue
+                    ? u.UltimoAcceso.Value.ToString("dd/MM/yyyy HH:mm")
                     : "Nunca";
 
                 string estado = u.Activo ? "Activo" : "Inactivo";
-                Color colorEstado = u.Activo ? Color.Green : Color.Red;
+                Color colorEstado = u.Activo ? UITheme.SuccessColor : UITheme.ErrorColor;
+
+                bool esSupervisor = u.Rol == RolesPermisos.Supervisor;
+                bool esUsuarioActual = SesionActual.UsuarioActivo != null && u.IdUsuario == SesionActual.UsuarioActivo.IdUsuario;
+
+                // Solo se modifica la columna visual "Usuario" (nunca se escribe de vuelta a la DB)
+                string prefijo = esSupervisor ? "👑 " : "";
+                string sufijo = esUsuarioActual ? "  (activo)" : "";
+                string usuarioDisplay = prefijo + u.NombreUsuario + sufijo;
 
                 int index = dgvUsuarios.Rows.Add(
                     u.IdUsuario,
-                    u.NombreUsuario,
+                    usuarioDisplay,
                     u.NombreCompleto,
                     u.Rol,
                     u.FechaCreacion.ToString("dd/MM/yyyy"),
@@ -205,10 +173,13 @@ namespace SistemaPOS.Forms
                 dgvUsuarios.Rows[index].Cells[6].Style.ForeColor = colorEstado;
                 dgvUsuarios.Rows[index].Cells[6].Style.Font = new Font("Segoe UI", 9, FontStyle.Bold);
 
-                // Resaltar usuario actual
-                if (u.IdUsuario == SesionActual.UsuarioActivo.IdUsuario)
+                // Filas de Supervisor: fondo dorado oscuro + texto dorado
+                if (esSupervisor)
                 {
-                    dgvUsuarios.Rows[index].DefaultCellStyle.BackColor = Color.FromArgb(60, 60, 70);
+                    dgvUsuarios.Rows[index].DefaultCellStyle.BackColor = Color.FromArgb(50, 42, 12);
+                    dgvUsuarios.Rows[index].DefaultCellStyle.ForeColor = UITheme.WarningColor;
+                    dgvUsuarios.Rows[index].DefaultCellStyle.SelectionBackColor = Color.FromArgb(100, 80, 20);
+                    dgvUsuarios.Rows[index].DefaultCellStyle.SelectionForeColor = UITheme.WarningColor;
                 }
             }
             ActualizarBotonDesactivarReactivar();
@@ -299,8 +270,8 @@ namespace SistemaPOS.Forms
             if (btnDesactivarReactivar == null) return;
             if (dgvUsuarios.SelectedRows.Count == 0)
             {
-                btnDesactivarReactivar.Text = "Desactivar";
-                btnDesactivarReactivar.BackColor = Color.FromArgb(139, 0, 0);
+                btnDesactivarReactivar.Text = "DESACTIVAR";
+                btnDesactivarReactivar.BackColor = UITheme.ErrorColor;
                 btnDesactivarReactivar.Enabled = false;
                 return;
             }
@@ -311,14 +282,14 @@ namespace SistemaPOS.Forms
 
             if (activo)
             {
-                btnDesactivarReactivar.Text = "Desactivar";
-                btnDesactivarReactivar.BackColor = Color.FromArgb(139, 0, 0);
+                btnDesactivarReactivar.Text = "DESACTIVAR";
+                btnDesactivarReactivar.BackColor = UITheme.ErrorColor;
                 btnDesactivarReactivar.Enabled = !esUsuarioActual;
             }
             else
             {
-                btnDesactivarReactivar.Text = "Reactivar";
-                btnDesactivarReactivar.BackColor = Color.FromArgb(34, 139, 34);
+                btnDesactivarReactivar.Text = "REACTIVAR";
+                btnDesactivarReactivar.BackColor = UITheme.SuccessColor;
                 btnDesactivarReactivar.Enabled = true;
             }
         }
@@ -393,13 +364,12 @@ namespace SistemaPOS.Forms
         private ComboBox cboRol;
         private CheckBox chkActivo;
         private Label lblFechaCreacion, lblUltimoAcceso;
-        private Button btnCambiarPassword;
 
         public UsuarioEditForm(int? idUsuario = null)
         {
             this.idUsuario = idUsuario;
             InitializeComponent();
-            
+
             if (idUsuario.HasValue)
             {
                 CargarUsuario();
@@ -409,101 +379,98 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Text = idUsuario.HasValue ? "Editar Usuario" : "Nuevo Usuario";
-            this.Size = new Size(520, 620);
+            this.Size = new Size(540, idUsuario.HasValue ? 650 : 580);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            
+
             UITheme.ApplyTheme(this);
 
-            Panel panelPrincipal = new Panel
+            // HEADER BAR
+            var header = UITheme.CrearHeaderBar(
+                idUsuario.HasValue ? "Editar Usuario" : "Nuevo Usuario",
+                idUsuario.HasValue ? "Modificar información del usuario" : "Crear nuevo usuario del sistema"
+            );
+            this.Controls.Add(header);
+
+            // Panel con scroll
+            Panel panelContenido = new Panel
             {
-                Location = new Point(16, 16),
-                Size = new Size(472, 560),
-                BackColor = UITheme.PanelBackground
+                Location = new Point(20, 90),
+                Size = new Size(480, idUsuario.HasValue ? 480 : 420),
+                BackColor = UITheme.DarkBackground,
+                AutoScroll = true
             };
 
-            int y = 12;
+            int y = 10;
 
-            // Título
-            Label lblTitulo = new Label
+            // SECCIÓN: DATOS DE CUENTA
+            Label lblSeccionCuenta = new Label
             {
-                Text = idUsuario.HasValue ? "Editar usuario" : "Nuevo usuario",
-                Font = UITheme.FontTitle,
-                ForeColor = UITheme.TextPrimary,
-                Location = new Point(16, y),
+                Text = "— DATOS DE CUENTA",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.AccentColor,
+                Location = new Point(0, y),
                 AutoSize = true
             };
-            panelPrincipal.Controls.Add(lblTitulo);
-            y += 44;
+            panelContenido.Controls.Add(lblSeccionCuenta);
+            y += 30;
 
-            // Grupo: Datos de cuenta
-            GroupBox grpCuenta = new GroupBox
-            {
-                Text = "  Datos de cuenta  ",
-                Font = UITheme.FontSubtitle,
-                ForeColor = UITheme.TextPrimary,
-                Location = new Point(16, y),
-                Size = new Size(440, idUsuario.HasValue ? 100 : 200),
-                BackColor = UITheme.PanelBackground
-            };
-            int yGrp = 28;
-            grpCuenta.Controls.Add(CrearLabel("Usuario (inicio de sesión):", 12, yGrp));
-            txtUsuario = CrearTextBox(12, yGrp + 24, 416);
+            panelContenido.Controls.Add(CrearLabel("Usuario (inicio de sesión):", 0, y));
+            txtUsuario = CrearTextBox(0, y + 22, 460);
             txtUsuario.Enabled = !idUsuario.HasValue;
             txtUsuario.MaxLength = MaxLongitudUsuario;
-            if (!idUsuario.HasValue)
-                txtUsuario.ForeColor = Color.Silver;
-            grpCuenta.Controls.Add(txtUsuario);
-            yGrp += 64;
+            panelContenido.Controls.Add(txtUsuario);
+            y += 60;
 
             if (!idUsuario.HasValue)
             {
-                grpCuenta.Controls.Add(CrearLabel("Contraseña (mín. " + MinLongitudPassword + " caracteres):", 12, yGrp));
-                txtPassword = CrearTextBox(12, yGrp + 24, 416);
+                panelContenido.Controls.Add(CrearLabel(string.Format("Contraseña (mínimo {0} caracteres):", MinLongitudPassword), 0, y));
+                txtPassword = CrearTextBox(0, y + 22, 460);
                 txtPassword.UseSystemPasswordChar = true;
-                grpCuenta.Controls.Add(txtPassword);
-                yGrp += 64;
-                grpCuenta.Controls.Add(CrearLabel("Confirmar contraseña:", 12, yGrp));
-                txtConfirmarPassword = CrearTextBox(12, yGrp + 24, 416);
-                txtConfirmarPassword.UseSystemPasswordChar = true;
-                grpCuenta.Controls.Add(txtConfirmarPassword);
-                yGrp += 56;
-            }
-            panelPrincipal.Controls.Add(grpCuenta);
-            y += grpCuenta.Height + 12;
+                panelContenido.Controls.Add(txtPassword);
+                y += 60;
 
-            // Grupo: Datos personales y rol
-            GroupBox grpPersonal = new GroupBox
+                panelContenido.Controls.Add(CrearLabel("Confirmar contraseña:", 0, y));
+                txtConfirmarPassword = CrearTextBox(0, y + 22, 460);
+                txtConfirmarPassword.UseSystemPasswordChar = true;
+                panelContenido.Controls.Add(txtConfirmarPassword);
+                y += 60;
+            }
+
+            y += 10;
+
+            // SECCIÓN: DATOS PERSONALES
+            Label lblSeccionPersonal = new Label
             {
-                Text = "  Datos personales y rol  ",
-                Font = UITheme.FontSubtitle,
-                ForeColor = UITheme.TextPrimary,
-                Location = new Point(16, y),
-                Size = new Size(440, 182),
-                BackColor = UITheme.PanelBackground
+                Text = "— DATOS PERSONALES Y ROL",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.AccentColor,
+                Location = new Point(0, y),
+                AutoSize = true
             };
-            yGrp = 28;
-            grpPersonal.Controls.Add(CrearLabel("Nombre completo:", 12, yGrp));
-            txtNombreCompleto = CrearTextBox(12, yGrp + 24, 416);
-            grpPersonal.Controls.Add(txtNombreCompleto);
-            yGrp += 64;
-            grpPersonal.Controls.Add(CrearLabel("Rol:", 12, yGrp));
+            panelContenido.Controls.Add(lblSeccionPersonal);
+            y += 30;
+
+            panelContenido.Controls.Add(CrearLabel("Nombre completo:", 0, y));
+            txtNombreCompleto = CrearTextBox(0, y + 22, 460);
+            panelContenido.Controls.Add(txtNombreCompleto);
+            y += 60;
+
+            panelContenido.Controls.Add(CrearLabel("Rol:", 0, y));
             cboRol = new ComboBox
             {
                 Font = UITheme.FontRegular,
-                Location = new Point(12, yGrp + 24),
-                Size = new Size(416, 30),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                BackColor = UITheme.InputBackground,
-                ForeColor = UITheme.TextPrimary,
-                FlatStyle = FlatStyle.Flat,
-                IntegralHeight = true
+                Location = new Point(0, y + 22),
+                Size = new Size(460, 28),
+                DropDownStyle = ComboBoxStyle.DropDownList
             };
+            UITheme.StyleComboBox(cboRol);
             cboRol.Items.AddRange(RolesPermisos.ObtenerRolesDisponibles().ToArray());
             cboRol.SelectedIndex = 0;
-            grpPersonal.Controls.Add(cboRol);
+            panelContenido.Controls.Add(cboRol);
+            y += 60;
 
             if (idUsuario.HasValue)
             {
@@ -512,91 +479,70 @@ namespace SistemaPOS.Forms
                     Text = "Usuario activo",
                     Font = UITheme.FontRegular,
                     ForeColor = UITheme.TextPrimary,
-                    Location = new Point(12, yGrp + 58),
+                    Location = new Point(0, y),
                     AutoSize = true,
                     Checked = true
                 };
-                grpPersonal.Controls.Add(chkActivo);
-            }
-            panelPrincipal.Controls.Add(grpPersonal);
-            y += grpPersonal.Height + 12;
+                panelContenido.Controls.Add(chkActivo);
+                y += 40;
 
-            // En edición: información extra y botón cambiar contraseña
-            if (idUsuario.HasValue)
-            {
                 lblFechaCreacion = new Label
                 {
                     Font = UITheme.FontSmall,
-                    ForeColor = UITheme.TextSecondary,
-                    Location = new Point(16, y),
+                    ForeColor = UITheme.TextMuted,
+                    Location = new Point(0, y),
                     AutoSize = true
                 };
+                panelContenido.Controls.Add(lblFechaCreacion);
+                y += 22;
+
                 lblUltimoAcceso = new Label
                 {
                     Font = UITheme.FontSmall,
-                    ForeColor = UITheme.TextSecondary,
-                    Location = new Point(16, y + 20),
+                    ForeColor = UITheme.TextMuted,
+                    Location = new Point(0, y),
                     AutoSize = true
                 };
-                panelPrincipal.Controls.Add(lblFechaCreacion);
-                panelPrincipal.Controls.Add(lblUltimoAcceso);
-                y += 48;
+                panelContenido.Controls.Add(lblUltimoAcceso);
+                y += 35;
 
-                btnCambiarPassword = new Button
+                RoundedButton btnCambiarPass = new RoundedButton
                 {
-                    Text = "Cambiar contraseña",
-                    Font = UITheme.FontBold,
-                    Location = new Point(16, y),
-                    Size = new Size(180, 36),
-                    BackColor = UITheme.InfoColor,
-                    ForeColor = Color.White,
-                    FlatStyle = FlatStyle.Flat,
-                    Cursor = Cursors.Hand
+                    Text = "🔑 CAMBIAR CONTRASEÑA",
+                    Location = new Point(0, y),
+                    Size = new Size(220, 36),
+                    BackColor = UITheme.InfoColor
                 };
-                btnCambiarPassword.FlatAppearance.BorderSize = 0;
-                btnCambiarPassword.Click += BtnCambiarPasswordEnEditor_Click;
-                panelPrincipal.Controls.Add(btnCambiarPassword);
-                y += 48;
+                btnCambiarPass.Click += BtnCambiarPasswordEnEditor_Click;
+                panelContenido.Controls.Add(btnCambiarPass);
             }
-            else
-            {
-                y += 8;
-            }
+
+            this.Controls.Add(panelContenido);
 
             // Botones Guardar / Cancelar
-            Button btnCancelar = new Button
+            RoundedButton btnGuardar = new RoundedButton
             {
-                Text = "Cancelar",
-                Font = UITheme.FontBold,
-                Location = new Point(248, y),
+                Text = "💾 GUARDAR",
+                Location = new Point(250, this.ClientSize.Height - 60),
                 Size = new Size(120, 40),
-                BackColor = UITheme.DangerColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                BackColor = UITheme.SuccessColor
             };
-            btnCancelar.FlatAppearance.BorderSize = 0;
-            btnCancelar.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
-            panelPrincipal.Controls.Add(btnCancelar);
-
-            Button btnGuardar = new Button
-            {
-                Text = "Guardar",
-                Font = UITheme.FontBold,
-                Location = new Point(116, y),
-                Size = new Size(120, 40),
-                BackColor = UITheme.SuccessColor,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnGuardar.FlatAppearance.BorderSize = 0;
             btnGuardar.Click += BtnGuardar_Click;
-            panelPrincipal.Controls.Add(btnGuardar);
+            this.Controls.Add(btnGuardar);
 
-            this.AcceptButton = btnGuardar;
-            this.CancelButton = btnCancelar;
-            this.Controls.Add(panelPrincipal);
+            RoundedButton btnCancelar = new RoundedButton
+            {
+                Text = "CANCELAR",
+                Location = new Point(380, this.ClientSize.Height - 60),
+                Size = new Size(120, 40),
+                BackColor = UITheme.ErrorColor
+            };
+            btnCancelar.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
+            this.Controls.Add(btnCancelar);
+
+            // AcceptButton y CancelButton requieren IButtonControl, no compatible con RoundedButton
+            // this.AcceptButton = btnGuardar;
+            // this.CancelButton = btnCancelar;
         }
 
         private Label CrearLabel(string texto, int x, int y)
@@ -604,8 +550,8 @@ namespace SistemaPOS.Forms
             return new Label
             {
                 Text = texto,
-                Font = UITheme.FontBold,
-                ForeColor = UITheme.TextPrimary,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.TextSecondary,
                 Location = new Point(x, y),
                 AutoSize = true
             };
@@ -615,7 +561,7 @@ namespace SistemaPOS.Forms
         {
             var txt = new TextBox
             {
-                Font = UITheme.FontRegular,
+                Font = new Font("Segoe UI", 11),
                 Location = new Point(x, y),
                 Size = new Size(width, 28)
             };
@@ -771,102 +717,91 @@ namespace SistemaPOS.Forms
         private void InitializeComponent(string nombreUsuario)
         {
             this.Text = "Cambiar Contraseña";
-            this.Size = new Size(500, 450);
+            this.Size = new Size(500, 380);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            
+
             UITheme.ApplyTheme(this);
 
-            Panel panelPrincipal = new Panel
+            // HEADER BAR
+            var header = UITheme.CrearHeaderBar("Cambiar Contraseña", nombreUsuario);
+            this.Controls.Add(header);
+
+            RoundedPanel panel = new RoundedPanel
             {
-                Location = new Point(20, 20),
-                Size = new Size(440, 360),
-                BackColor = Color.FromArgb(45, 45, 48)
+                Location = new Point(30, 100),
+                Size = new Size(420, 200),
+                BackColor = UITheme.PanelBackground,
+                Radius = 12
             };
 
-            Label lblTitulo = new Label
-            {
-                Text = string.Format("Cambiar contraseña de:\n{0}", nombreUsuario),
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 20),
-                AutoSize = false,
-                Size = new Size(400, 60),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            panelPrincipal.Controls.Add(lblTitulo);
+            int y = 20;
 
             Label lblNueva = new Label
             {
-                Text = "Nueva Contraseña:",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 100),
+                Text = "NUEVA CONTRASEÑA",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.TextSecondary,
+                Location = new Point(20, y),
                 AutoSize = true
             };
-            panelPrincipal.Controls.Add(lblNueva);
+            panel.Controls.Add(lblNueva);
 
             txtNuevaPassword = new TextBox
             {
-                Font = new Font("Segoe UI", 12),
-                Location = new Point(20, 130),
-                Size = new Size(400, 30),
+                Font = new Font("Segoe UI", 11),
+                Location = new Point(20, y + 22),
+                Size = new Size(380, 28),
                 UseSystemPasswordChar = true
             };
-            panelPrincipal.Controls.Add(txtNuevaPassword);
+            UITheme.StyleTextBox(txtNuevaPassword);
+            panel.Controls.Add(txtNuevaPassword);
+            y += 70;
 
             Label lblConfirmar = new Label
             {
-                Text = "Confirmar Contraseña:",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 180),
+                Text = "CONFIRMAR CONTRASEÑA",
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = UITheme.TextSecondary,
+                Location = new Point(20, y),
                 AutoSize = true
             };
-            panelPrincipal.Controls.Add(lblConfirmar);
+            panel.Controls.Add(lblConfirmar);
 
             txtConfirmarPassword = new TextBox
             {
-                Font = new Font("Segoe UI", 12),
-                Location = new Point(20, 210),
-                Size = new Size(400, 30),
+                Font = new Font("Segoe UI", 11),
+                Location = new Point(20, y + 22),
+                Size = new Size(380, 28),
                 UseSystemPasswordChar = true
             };
-            panelPrincipal.Controls.Add(txtConfirmarPassword);
+            UITheme.StyleTextBox(txtConfirmarPassword);
+            panel.Controls.Add(txtConfirmarPassword);
 
-            Button btnGuardar = new Button
+            this.Controls.Add(panel);
+
+            // Botones
+            RoundedButton btnGuardar = new RoundedButton
             {
                 Text = "💾 CAMBIAR",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                Location = new Point(20, 280),
-                Size = new Size(180, 45),
-                BackColor = Color.FromArgb(34, 139, 34),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Location = new Point(200, 320),
+                Size = new Size(140, 40),
+                BackColor = UITheme.SuccessColor
             };
-            btnGuardar.FlatAppearance.BorderSize = 0;
             btnGuardar.Click += BtnGuardar_Click;
-            panelPrincipal.Controls.Add(btnGuardar);
+            this.Controls.Add(btnGuardar);
 
-            Button btnCancelar = new Button
+            RoundedButton btnCancelar = new RoundedButton
             {
-                Text = "✗ CANCELAR",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                Location = new Point(240, 280),
-                Size = new Size(180, 45),
-                BackColor = Color.FromArgb(139, 0, 0),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Text = "CANCELAR",
+                Location = new Point(350, 320),
+                Size = new Size(120, 40),
+                BackColor = UITheme.ErrorColor
             };
-            btnCancelar.FlatAppearance.BorderSize = 0;
             btnCancelar.Click += (s, e) => this.DialogResult = DialogResult.Cancel;
-            panelPrincipal.Controls.Add(btnCancelar);
-
-            this.Controls.Add(panelPrincipal);
+            this.Controls.Add(btnCancelar);
         }
 
         private void BtnGuardar_Click(object sender, EventArgs e)

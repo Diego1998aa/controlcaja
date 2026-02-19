@@ -22,15 +22,13 @@ namespace SistemaPOS.Forms
             CargarCategorias();
 
             if (idProducto.HasValue)
-            {
                 CargarProducto();
-            }
         }
 
         private void InitializeComponent()
         {
             this.Text = idProducto.HasValue ? "Editar Producto" : "Nuevo Producto";
-            this.Size = new Size(600, 750);
+            this.Size = new Size(560, 700);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -38,134 +36,141 @@ namespace SistemaPOS.Forms
 
             UITheme.ApplyTheme(this);
 
-            Panel panelPrincipal = new Panel
+            // Header
+            Panel header = UITheme.CrearHeaderBar(
+                idProducto.HasValue ? "Editar Producto" : "Nuevo Producto",
+                idProducto.HasValue ? "Modifique los datos del producto" : "Complete los datos del nuevo producto"
+            );
+
+            // Panel scrollable
+            Panel panelContenido = new Panel
             {
-                Location = new Point(20, 20),
-                Size = new Size(540, 670),
-                BackColor = UITheme.PanelBackground,
-                Padding = new Padding(20)
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                Padding = new Padding(30, 15, 30, 15),
+                BackColor = UITheme.DarkBackground
             };
 
-            int y = 20;
-
-            // Título
-            Label lblTitulo = new Label
-            {
-                Text = idProducto.HasValue ? "EDITAR PRODUCTO" : "NUEVO PRODUCTO",
-                Font = UITheme.FontTitle,
-                ForeColor = UITheme.TextPrimary,
-                Location = new Point(20, y),
-                AutoSize = false,
-                Size = new Size(500, 40),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            panelPrincipal.Controls.Add(lblTitulo);
-            y += 60;
+            int y = 10;
+            int fieldWidth = 470;
 
             // Código de Barras
-            panelPrincipal.Controls.Add(CrearLabel("Código de Barras:", 20, y));
-            txtCodigo = CrearTextBox(20, y + 25, 500);
-            panelPrincipal.Controls.Add(txtCodigo);
-            y += 70;
+            panelContenido.Controls.Add(CrearLabel("CÓDIGO DE BARRAS", 0, y));
+            y += 22;
+            txtCodigo = CrearTextBox(0, y, fieldWidth);
+            panelContenido.Controls.Add(txtCodigo);
+            y += 45;
 
             // SKU
-            panelPrincipal.Controls.Add(CrearLabel("SKU (Opcional):", 20, y));
-            txtSKU = CrearTextBox(20, y + 25, 500);
-            panelPrincipal.Controls.Add(txtSKU);
-            y += 70;
+            panelContenido.Controls.Add(CrearLabel("SKU (OPCIONAL)", 0, y));
+            y += 22;
+            txtSKU = CrearTextBox(0, y, fieldWidth);
+            panelContenido.Controls.Add(txtSKU);
+            y += 45;
 
             // Nombre
-            panelPrincipal.Controls.Add(CrearLabel("Nombre del Producto:", 20, y));
-            txtNombre = CrearTextBox(20, y + 25, 500);
-            panelPrincipal.Controls.Add(txtNombre);
-            y += 70;
+            panelContenido.Controls.Add(CrearLabel("NOMBRE DEL PRODUCTO", 0, y));
+            y += 22;
+            txtNombre = CrearTextBox(0, y, fieldWidth);
+            panelContenido.Controls.Add(txtNombre);
+            y += 45;
 
             // Descripción
-            panelPrincipal.Controls.Add(CrearLabel("Descripción:", 20, y));
+            panelContenido.Controls.Add(CrearLabel("DESCRIPCIÓN", 0, y));
+            y += 22;
             txtDescripcion = new TextBox
             {
-                Location = new Point(20, y + 25),
-                Size = new Size(500, 60),
+                Location = new Point(0, y),
+                Size = new Size(fieldWidth, 55),
                 Multiline = true,
                 Font = UITheme.FontRegular
             };
             UITheme.StyleTextBox(txtDescripcion);
-            panelPrincipal.Controls.Add(txtDescripcion);
-            y += 95;
+            panelContenido.Controls.Add(txtDescripcion);
+            y += 65;
 
             // Categoría
-            panelPrincipal.Controls.Add(CrearLabel("Categoría:", 20, y));
+            panelContenido.Controls.Add(CrearLabel("CATEGORÍA", 0, y));
+            y += 22;
             cboCategoria = new ComboBox
             {
-                Location = new Point(20, y + 25),
-                Size = new Size(240, 30),
+                Location = new Point(0, y),
+                Size = new Size(230, 30),
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = UITheme.FontRegular
+                Font = UITheme.FontRegular,
+                BackColor = Color.FromArgb(55, 65, 81),
+                ForeColor = UITheme.TextPrimary,
+                FlatStyle = FlatStyle.Flat
             };
-            panelPrincipal.Controls.Add(cboCategoria);
-            y += 70;
+            panelContenido.Controls.Add(cboCategoria);
+            y += 45;
 
-            // Precios y Stock en dos columnas
-            int col1X = 20;
-            int col2X = 270;
-            int yRow = y;
+            // Precios en dos columnas
+            int col1X = 0;
+            int col2X = 245;
+            int colW = 225;
 
-            panelPrincipal.Controls.Add(CrearLabel("Precio Compra:", col1X, yRow));
-            txtPrecioC = CrearTextBox(col1X, yRow + 25, 230);
-            panelPrincipal.Controls.Add(txtPrecioC);
+            panelContenido.Controls.Add(CrearLabel("PRECIO COMPRA", col1X, y));
+            panelContenido.Controls.Add(CrearLabel("PRECIO VENTA", col2X, y));
+            y += 22;
+            txtPrecioC = CrearTextBox(col1X, y, colW);
+            txtPrecioV = CrearTextBox(col2X, y, colW);
+            panelContenido.Controls.Add(txtPrecioC);
+            panelContenido.Controls.Add(txtPrecioV);
+            y += 45;
 
-            panelPrincipal.Controls.Add(CrearLabel("Precio Venta:", col2X, yRow));
-            txtPrecioV = CrearTextBox(col2X, yRow + 25, 230);
-            panelPrincipal.Controls.Add(txtPrecioV);
-            yRow += 70;
-
-            panelPrincipal.Controls.Add(CrearLabel("Stock Actual:", col1X, yRow));
-            txtStock = CrearTextBox(col1X, yRow + 25, 230);
-            panelPrincipal.Controls.Add(txtStock);
-
-            panelPrincipal.Controls.Add(CrearLabel("Stock Mínimo:", col2X, yRow));
-            txtStockMin = CrearTextBox(col2X, yRow + 25, 230);
-            txtStockMin.Text = "5"; // Valor por defecto
-            panelPrincipal.Controls.Add(txtStockMin);
-            yRow += 70;
+            // Stock en dos columnas
+            panelContenido.Controls.Add(CrearLabel("STOCK ACTUAL", col1X, y));
+            panelContenido.Controls.Add(CrearLabel("STOCK MÍNIMO", col2X, y));
+            y += 22;
+            txtStock = CrearTextBox(col1X, y, colW);
+            txtStockMin = CrearTextBox(col2X, y, colW);
+            txtStockMin.Text = "5";
+            panelContenido.Controls.Add(txtStock);
+            panelContenido.Controls.Add(txtStockMin);
+            y += 55;
 
             // Botones
-            Button btnGuardar = new Button
+            RoundedButton btnGuardar = new RoundedButton
             {
                 Text = "GUARDAR",
-                Location = new Point(20, yRow + 20),
-                Size = new Size(240, 50),
-                Font = UITheme.FontSubtitle
+                IconText = "\U0001F4BE",
+                Location = new Point(0, y),
+                Size = new Size(225, 48),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                ButtonColor = UITheme.SuccessColor,
+                HoverColor = UITheme.LightenColor(UITheme.SuccessColor, 20),
+                PressColor = UITheme.DarkenColor(UITheme.SuccessColor, 15),
+                Radius = 8
             };
-            UITheme.StyleButton(btnGuardar, UITheme.SuccessColor);
             btnGuardar.Click += BtnGuardar_Click;
-            panelPrincipal.Controls.Add(btnGuardar);
+            panelContenido.Controls.Add(btnGuardar);
 
             Button btnCancelar = new Button
             {
                 Text = "CANCELAR",
-                Location = new Point(280, yRow + 20),
-                Size = new Size(240, 50),
-                Font = UITheme.FontSubtitle
+                Location = new Point(245, y),
+                Size = new Size(225, 48),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold)
             };
-            UITheme.StyleButton(btnCancelar, UITheme.ErrorColor);
+            UITheme.StyleButton(btnCancelar, UITheme.DangerColor);
             btnCancelar.Click += (s, e) => this.Close();
-            panelPrincipal.Controls.Add(btnCancelar);
+            panelContenido.Controls.Add(btnCancelar);
 
-            this.Controls.Add(panelPrincipal);
+            this.Controls.Add(panelContenido);
+            this.Controls.Add(header);
         }
 
         private Label CrearLabel(string texto, int x, int y)
         {
-            Label lbl = new Label
+            return new Label
             {
                 Text = texto,
-                Font = UITheme.FontBold,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 ForeColor = UITheme.TextSecondary,
                 Location = new Point(x, y),
                 AutoSize = true
             };
-            return lbl;
         }
 
         private TextBox CrearTextBox(int x, int y, int width)
@@ -174,7 +179,7 @@ namespace SistemaPOS.Forms
             {
                 Location = new Point(x, y),
                 Size = new Size(width, 30),
-                Font = UITheme.FontRegular
+                Font = new Font("Segoe UI", 11)
             };
             UITheme.StyleTextBox(txt);
             return txt;
@@ -211,7 +216,6 @@ namespace SistemaPOS.Forms
         {
             try
             {
-                // Validaciones
                 if (string.IsNullOrWhiteSpace(txtCodigo.Text))
                 {
                     MessageBox.Show("El código de barras es obligatorio", "Validación",
@@ -233,32 +237,28 @@ namespace SistemaPOS.Forms
 
                 if (!decimal.TryParse(txtPrecioC.Text, out precioC) || precioC < 0)
                 {
-                    MessageBox.Show("Precio de compra inválido", "Validación",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Precio de compra inválido", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     txtPrecioC.Focus();
                     return;
                 }
 
                 if (!decimal.TryParse(txtPrecioV.Text, out precioV) || precioV < 0)
                 {
-                    MessageBox.Show("Precio de venta inválido", "Validación",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Precio de venta inválido", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     txtPrecioV.Focus();
                     return;
                 }
 
                 if (!int.TryParse(txtStock.Text, out stock) || stock < 0)
                 {
-                    MessageBox.Show("Stock actual inválido", "Validación",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Stock actual inválido", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     txtStock.Focus();
                     return;
                 }
 
                 if (!int.TryParse(txtStockMin.Text, out stockMin) || stockMin < 0)
                 {
-                    MessageBox.Show("Stock mínimo inválido", "Validación",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Stock mínimo inválido", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     txtStockMin.Focus();
                     return;
                 }
@@ -280,14 +280,12 @@ namespace SistemaPOS.Forms
                 {
                     p.IdProducto = idProducto.Value;
                     ProductoService.ActualizarProducto(p);
-                    MessageBox.Show("Producto actualizado correctamente", "Éxito",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Producto actualizado correctamente", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
                     ProductoService.CrearProducto(p);
-                    MessageBox.Show("Producto creado correctamente", "Éxito",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Producto creado correctamente", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
                 this.DialogResult = DialogResult.OK;
@@ -295,18 +293,15 @@ namespace SistemaPOS.Forms
             }
             catch (UnauthorizedAccessException ex)
             {
-                MessageBox.Show(ex.Message, "Acceso Denegado",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(ex.Message, "Acceso Denegado", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (InvalidOperationException ex)
             {
-                MessageBox.Show(ex.Message, "Error de Validación",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(ex.Message, "Error de Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al guardar: " + ex.Message, "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error al guardar: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

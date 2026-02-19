@@ -23,75 +23,78 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Text = "Configuración de Empresa";
-            this.Size = new Size(500, 450);
+            this.Size = new Size(600, 570);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
-            
+
             UITheme.ApplyTheme(this);
 
-            Label lblTitulo = new Label 
-            { 
-                Text = "DATOS DE LA EMPRESA", 
-                Font = UITheme.FontTitle, 
-                ForeColor = UITheme.TextPrimary, 
-                Location = new Point(20, 20),
-                AutoSize = true 
+            // HEADER BAR
+            var header = UITheme.CrearHeaderBar("Configuración de Empresa", "Datos que aparecerán en tickets y reportes");
+            this.Controls.Add(header);
+
+            // Panel contenedor
+            RoundedPanel panel = new RoundedPanel
+            {
+                Location = new Point(30, 100),
+                Size = new Size(520, 380),
+                BackColor = UITheme.PanelBackground,
+                Radius = 12
             };
 
             // Campos
-            txtNombreEmpresa = CrearCampo("Razón Social / Nombre:", 70);
-            txtRUT = CrearCampo("RUT / Identificación:", 130);
-            txtGiro = CrearCampo("Giro / Actividad:", 190);
-            txtDireccion = CrearCampo("Dirección:", 250);
-            txtTelefono = CrearCampo("Teléfono:", 310);
+            txtNombreEmpresa = CrearCampo(panel, "Razón Social / Nombre:", 20);
+            txtRUT = CrearCampo(panel, "RUT / Identificación:", 90);
+            txtGiro = CrearCampo(panel, "Giro / Actividad:", 160);
+            txtDireccion = CrearCampo(panel, "Dirección:", 230);
+            txtTelefono = CrearCampo(panel, "Teléfono:", 300);
 
-            // Botón Guardar
-            Button btnGuardar = new Button 
-            { 
-                Text = "💾 GUARDAR CAMBIOS", 
-                Location = new Point(20, 380), 
-                Size = new Size(200, 40), 
-                Font = UITheme.FontBold 
+            this.Controls.Add(panel);
+
+            // Botones
+            RoundedButton btnGuardar = new RoundedButton
+            {
+                Text = "💾 GUARDAR CAMBIOS",
+                Location = new Point(280, 500),
+                Size = new Size(180, 40),
+                BackColor = UITheme.SuccessColor
             };
-            UITheme.StyleButton(btnGuardar, UITheme.SuccessColor);
             btnGuardar.Click += BtnGuardar_Click;
+            this.Controls.Add(btnGuardar);
 
-            // Botón Cancelar
-            Button btnCancelar = new Button 
-            { 
-                Text = "CANCELAR", 
-                Location = new Point(240, 380), 
-                Size = new Size(150, 40), 
-                Font = UITheme.FontBold 
+            RoundedButton btnCancelar = new RoundedButton
+            {
+                Text = "CANCELAR",
+                Location = new Point(470, 500),
+                Size = new Size(120, 40),
+                BackColor = UITheme.ErrorColor
             };
-            UITheme.StyleButton(btnCancelar, UITheme.ErrorColor);
             btnCancelar.Click += (s, e) => this.Close();
-
-            this.Controls.AddRange(new Control[] { lblTitulo, btnGuardar, btnCancelar });
+            this.Controls.Add(btnCancelar);
         }
 
-        private TextBox CrearCampo(string etiqueta, int y)
+        private TextBox CrearCampo(Panel contenedor, string etiqueta, int y)
         {
-            Label lbl = new Label 
-            { 
-                Text = etiqueta, 
-                Location = new Point(20, y), 
-                AutoSize = true, 
-                Font = UITheme.FontRegular,
+            Label lbl = new Label
+            {
+                Text = etiqueta,
+                Location = new Point(20, y),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 ForeColor = UITheme.TextSecondary
             };
+            contenedor.Controls.Add(lbl);
 
-            TextBox txt = new TextBox 
-            { 
-                Location = new Point(20, y + 25), 
-                Size = new Size(440, 30), 
-                Font = UITheme.FontRegular 
+            TextBox txt = new TextBox
+            {
+                Location = new Point(20, y + 22),
+                Size = new Size(480, 30),
+                Font = new Font("Segoe UI", 11)
             };
             UITheme.StyleTextBox(txt);
+            contenedor.Controls.Add(txt);
 
-            this.Controls.Add(lbl);
-            this.Controls.Add(txt);
             return txt;
         }
 

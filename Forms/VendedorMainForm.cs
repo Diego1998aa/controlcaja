@@ -1,31 +1,29 @@
 using System;
 using System.Windows.Forms;
 using System.Drawing;
-using System.Linq;
 using System.Collections.Generic;
 using SistemaPOS.Models;
-using SistemaPOS.Data;
 using SistemaPOS.Services;
 using SistemaPOS.Helpers;
 
 namespace SistemaPOS.Forms
 {
-    public partial class MainForm : Form
+    public partial class VendedorMainForm : Form
     {
-        private DataGridView dgvCola;
+        private DataGridView dgvPedidos;
         private Timer tmrMonitor;
-        private Label lblTotalUsuarios;
-        private Label lblUsuariosActivos;
-        private Label lblNuevosMes;
+        private Label lblTotalPedidos;
+        private Label lblPendientes;
+        private Label lblTotalVendido;
         private FlowLayoutPanel pnlAlertas;
         private Label lblAlertaTitulo;
         private Label lblReloj;
 
-        public MainForm()
+        public VendedorMainForm()
         {
             InitializeComponent();
             this.WindowState = FormWindowState.Maximized;
-            this.Text = "Sistema POS - Control de Caja";
+            this.Text = "Sistema POS - Panel Vendedor";
             IniciarMonitor();
         }
 
@@ -69,10 +67,8 @@ namespace SistemaPOS.Forms
                 BackColor = UITheme.BorderColor
             };
             logoPanel.Controls.Add(logoSep);
-
             sidebar.Controls.Add(logoPanel);
 
-            // Sidebar items - se agregan en orden inverso porque Dock=Top los apila
             Panel sidebarItems = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -94,24 +90,10 @@ namespace SistemaPOS.Forms
 
             // Items del menú
             var menuItems = new List<SidebarItem>();
-            menuItems.Add(new SidebarItem("\U0001F4CB", "Cola de Cobro", () => { }, true));
+            menuItems.Add(new SidebarItem("\U0001F4CB", "Mis Pedidos", () => { }, true));
+            menuItems.Add(new SidebarItem("\U0001F4B3", "Terminal de Venta", () => AbrirForm(new TerminalVentaForm())));
+            menuItems.Add(new SidebarItem("\U0001F4E6", "Consultar Stock", () => AbrirForm(new InventarioForm())));
 
-            if (SesionActual.TienePermiso(Permiso.EditarProductos))
-                menuItems.Add(new SidebarItem("\U0001F4E6", "Productos", () => AbrirForm(new InventarioForm())));
-
-            if (SesionActual.TienePermiso(Permiso.VerUsuarios))
-                menuItems.Add(new SidebarItem("\U0001F465", "Usuarios", () => AbrirForm(new UsuariosForm())));
-
-            if (SesionActual.TienePermiso(Permiso.CrearPedidos))
-                menuItems.Add(new SidebarItem("\U0001F4B3", "Terminal Venta", () => AbrirForm(new TerminalVentaForm())));
-
-            if (SesionActual.TienePermiso(Permiso.VerReportes))
-                menuItems.Add(new SidebarItem("\U0001F4CA", "Reportes", () => AbrirForm(new ReportesForm())));
-
-            if (SesionActual.TienePermiso(Permiso.ConfigurarSistema))
-                menuItems.Add(new SidebarItem("\u2699", "Configuración", () => AbrirForm(new ConfiguracionForm())));
-
-            // Agregar items en orden inverso para Dock.Top
             for (int i = menuItems.Count - 1; i >= 0; i--)
                 sidebarItems.Controls.Add(menuItems[i]);
 
@@ -120,17 +102,14 @@ namespace SistemaPOS.Forms
             // ==========================================
             // HEADER BAR
             // ==========================================
-            string rolTexto = SesionActual.UsuarioActivo != null ? SesionActual.UsuarioActivo.Rol : "";
             string nombreUsuario = SesionActual.UsuarioActivo != null ? SesionActual.UsuarioActivo.NombreCompleto : "";
-            Panel header = UITheme.CrearHeaderBar("Cola de Cobro", string.Format("Bienvenido, {0} ({1})", nombreUsuario, rolTexto));
+            Panel header = UITheme.CrearHeaderBar("Panel Vendedor", string.Format("Bienvenido, {0}", nombreUsuario));
 
-            // Reloj en el header
             lblReloj = new Label
             {
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = UITheme.TextSecondary,
                 AutoSize = true,
-                Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Location = new Point(900, 18)
             };
             header.Controls.Add(lblReloj);
@@ -149,7 +128,7 @@ namespace SistemaPOS.Forms
                 Padding = new Padding(20)
             };
 
-            // KPIs horizontales en la parte superior
+            // KPIs
             FlowLayoutPanel pnlKPIs = new FlowLayoutPanel
             {
                 Dock = DockStyle.Top,
@@ -160,11 +139,11 @@ namespace SistemaPOS.Forms
                 Padding = new Padding(0, 0, 0, 10)
             };
 
-            pnlKPIs.Controls.Add(UITheme.CrearTarjetaKPI("Clientes Registrados", "\U0001F465", UITheme.PrimaryColor, ref lblTotalUsuarios));
-            pnlKPIs.Controls.Add(UITheme.CrearTarjetaKPI("Activos", "\u2705", UITheme.SuccessColor, ref lblUsuariosActivos));
-            pnlKPIs.Controls.Add(UITheme.CrearTarjetaKPI("Nuevos del Mes", "\U0001F195", UITheme.AccentColor, ref lblNuevosMes));
+            pnlKPIs.Controls.Add(UITheme.CrearTarjetaKPI("Pedidos Hoy", "\U0001F4CB", UITheme.PrimaryColor, ref lblTotalPedidos));
+            pnlKPIs.Controls.Add(UITheme.CrearTarjetaKPI("Pendientes", "\u23F3", UITheme.WarningColor, ref lblPendientes));
+            pnlKPIs.Controls.Add(UITheme.CrearTarjetaKPI("Total Vendido", "\U0001F4B0", UITheme.SuccessColor, ref lblTotalVendido));
 
-            // Grid de cola
+            // Grid de pedidos
             Panel pnlGrid = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -174,23 +153,14 @@ namespace SistemaPOS.Forms
 
             Label lblTituloCola = new Label
             {
-                Text = "PEDIDOS PENDIENTES DE COBRO",
+                Text = "MIS PEDIDOS DE HOY",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = UITheme.TextPrimary,
                 Dock = DockStyle.Top,
                 Height = 35
             };
 
-            Label lblInstruccion = new Label
-            {
-                Text = "Doble clic en un pedido para procesar el cobro",
-                Font = UITheme.FontSmall,
-                ForeColor = UITheme.TextMuted,
-                Dock = DockStyle.Top,
-                Height = 20
-            };
-
-            dgvCola = new DataGridView
+            dgvPedidos = new DataGridView
             {
                 Dock = DockStyle.Fill,
                 AllowUserToAddRows = false,
@@ -198,24 +168,23 @@ namespace SistemaPOS.Forms
                 ReadOnly = true,
                 Font = new Font("Segoe UI", 11)
             };
-            UITheme.StyleDataGridView(dgvCola);
+            UITheme.StyleDataGridView(dgvPedidos);
 
-            dgvCola.Columns.Add("Id", "Pedido #");
-            dgvCola.Columns.Add("Vendedor", "Vendedor");
-            dgvCola.Columns.Add("Total", "Monto Total");
-            dgvCola.Columns.Add("Tiempo", "Tiempo en espera");
-            dgvCola.Columns[0].FillWeight = 15;
-            dgvCola.Columns[1].FillWeight = 35;
-            dgvCola.Columns[2].FillWeight = 25;
-            dgvCola.Columns[3].FillWeight = 25;
+            dgvPedidos.Columns.Add("Id", "Pedido #");
+            dgvPedidos.Columns.Add("Total", "Monto Total");
+            dgvPedidos.Columns.Add("Estado", "Estado");
+            dgvPedidos.Columns.Add("Hora", "Hora");
+            dgvPedidos.Columns[0].FillWeight = 20;
+            dgvPedidos.Columns[1].FillWeight = 30;
+            dgvPedidos.Columns[2].FillWeight = 25;
+            dgvPedidos.Columns[3].FillWeight = 25;
 
-            dgvCola.CellDoubleClick += DgvCola_CellDoubleClick;
+            dgvPedidos.CellFormatting += DgvPedidos_CellFormatting;
 
-            pnlGrid.Controls.Add(dgvCola);
-            pnlGrid.Controls.Add(lblInstruccion);
+            pnlGrid.Controls.Add(dgvPedidos);
             pnlGrid.Controls.Add(lblTituloCola);
 
-            // Panel de alertas de stock
+            // Alertas de stock
             Panel pnlAlertaContenedor = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -257,9 +226,7 @@ namespace SistemaPOS.Forms
             contenido.Controls.Add(pnlAlertaContenedor);
             contenido.Controls.Add(pnlKPIs);
 
-            // ==========================================
-            // ENSAMBLAJE FINAL
-            // ==========================================
+            // Ensamblaje
             this.Controls.Add(contenido);
             this.Controls.Add(header);
             this.Controls.Add(sidebar);
@@ -282,26 +249,26 @@ namespace SistemaPOS.Forms
 
         private void ActualizarDatos()
         {
-            var pendientes = PedidoService.ObtenerPendientes();
-            dgvCola.Rows.Clear();
-            foreach (var p in pendientes)
+            int idVendedor = SesionActual.UsuarioActivo.IdUsuario;
+
+            var pedidos = PedidoService.ObtenerPedidosPorVendedor(idVendedor);
+            dgvPedidos.Rows.Clear();
+            foreach (var p in pedidos)
             {
-                TimeSpan espera = DateTime.Now - p.Fecha;
-                string tiempoTexto = string.Format("{0} min {1} seg", (int)espera.TotalMinutes, espera.Seconds);
-
-                int idx = dgvCola.Rows.Add(p.IdPedido, p.NombreVendedor, p.Total.ToString("C"), tiempoTexto);
-
-                // Colorear según tiempo de espera
-                if (espera.TotalMinutes > 10)
-                    dgvCola.Rows[idx].DefaultCellStyle.ForeColor = UITheme.DangerColor;
-                else if (espera.TotalMinutes > 5)
-                    dgvCola.Rows[idx].DefaultCellStyle.ForeColor = UITheme.WarningColor;
+                dgvPedidos.Rows.Add(
+                    p.IdPedido,
+                    p.Total.ToString("C"),
+                    p.Estado,
+                    p.Fecha.ToString("HH:mm:ss")
+                );
             }
 
-            var usuarios = UsuarioService.ObtenerTodosLosUsuarios();
-            lblTotalUsuarios.Text = usuarios.Count.ToString();
-            lblUsuariosActivos.Text = usuarios.Count(u => u.Activo).ToString();
-            lblNuevosMes.Text = usuarios.Count(u => u.FechaCreacion.Month == DateTime.Now.Month && u.FechaCreacion.Year == DateTime.Now.Year).ToString();
+            int totalPedidos, pendientes;
+            decimal totalVendido;
+            PedidoService.ObtenerEstadisticasVendedor(idVendedor, out totalPedidos, out pendientes, out totalVendido);
+            lblTotalPedidos.Text = totalPedidos.ToString();
+            lblPendientes.Text = pendientes.ToString();
+            lblTotalVendido.Text = totalVendido.ToString("C");
 
             ActualizarAlertas();
         }
@@ -386,37 +353,26 @@ namespace SistemaPOS.Forms
                 card.Controls.Add(lblNombre);
                 card.Controls.Add(lblDetalle);
                 card.Controls.Add(barra);
-
                 pnlAlertas.Controls.Add(card);
             }
         }
 
-        private void DgvCola_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        private void DgvPedidos_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (e.RowIndex >= 0)
+            if (e.ColumnIndex == 2 && e.Value != null)
             {
-                int idPedido = Convert.ToInt32(dgvCola.Rows[e.RowIndex].Cells[0].Value);
-                ProcesarCobro(idPedido);
-            }
-        }
-
-        private void ProcesarCobro(int idPedido)
-        {
-            var pedido = PedidoService.ObtenerPedidoPorId(idPedido);
-            if (pedido != null)
-            {
-                var items = new List<ItemVenta>();
-                foreach (var det in pedido.Detalles)
+                string estado = e.Value.ToString();
+                switch (estado)
                 {
-                    items.Add(new ItemVenta(det.Producto, det.Cantidad));
-                }
-
-                using (var form = new CobrarForm(items, 0.19m, idPedido))
-                {
-                    if (form.ShowDialog() == DialogResult.OK)
-                    {
-                        ActualizarDatos();
-                    }
+                    case "PENDIENTE":
+                        e.CellStyle.ForeColor = UITheme.WarningColor;
+                        break;
+                    case "PAGADO":
+                        e.CellStyle.ForeColor = UITheme.SuccessColor;
+                        break;
+                    case "CANCELADO":
+                        e.CellStyle.ForeColor = UITheme.DangerColor;
+                        break;
                 }
             }
         }

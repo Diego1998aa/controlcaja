@@ -164,10 +164,69 @@ namespace SistemaPOS.Services
         public static bool ActualizarEstado(int idPedido, string nuevoEstado)
         {
             string sql = "UPDATE Pedidos SET Estado = @estado WHERE IdPedido = @id";
-            return DatabaseHelper.ExecuteNonQuery(sql, new[] { 
+            return DatabaseHelper.ExecuteNonQuery(sql, new[] {
                 new SQLiteParameter("@estado", nuevoEstado),
-                new SQLiteParameter("@id", idPedido) 
+                new SQLiteParameter("@id", idPedido)
             }) > 0;
+        }
+
+        /// <summary>
+        /// Obtiene todos los pedidos de un vendedor específico (hoy).
+        /// </summary>
+        public static List<Pedido> ObtenerPedidosPorVendedor(int idVendedor)
+        {
+            var lista = new List<Pedido>();
+            string sql = @"SELECT p.*, u.NombreUsuario
+                           FROM Pedidos p
+                           LEFT JOIN Usuarios u ON p.IdUsuarioVendedor = u.IdUsuario
+                           WHERE p.IdUsuarioVendedor = @idVendedor
+                             AND DATE(p.Fecha) = DATE('now', 'localtime')
+                           ORDER BY p.Fecha DESC";
+
+            DataTable dt = DatabaseHelper.ExecuteQuery(sql, new[] { new SQLiteParameter("@idVendedor", idVendedor) });
+            foreach (DataRow row in dt.Rows)
+            {
+                lista.Add(new Pedido
+                {
+                    IdPedido = Convert.ToInt32(row["IdPedido"]),
+                    IdUsuarioVendedor = Convert.ToInt32(row["IdUsuarioVendedor"]),
+                    IdCliente = row["IdCliente"] != DBNull.Value ? Convert.ToInt32(row["IdCliente"]) : (int?)null,
+                    Fecha = Convert.ToDateTime(row["Fecha"]),
+                    Total = Convert.ToDecimal(row["Total"]),
+                    Estado = row["Estado"].ToString(),
+                    NombreVendedor = row["NombreUsuario"].ToString()
+                });
+            }
+            return lista;
+        }
+
+        /// <summary>
+        /// Obtiene estadísticas del vendedor para el día actual.
+        /// </summary>
+        public static void ObtenerEstadisticasVendedor(int idVendedor, out int totalPedidos, out int pendientes, out decimal totalVendido)
+        {
+            string sql = @"SELECT
+                             COALESCE(COUNT(*), 0) as Total,
+                             COALESCE(SUM(CASE WHEN Estado = 'PENDIENTE' THEN 1 ELSE 0 END), 0) as Pendientes,
+                             COALESCE(SUM(CASE WHEN Estado = 'PAGADO' THEN Total ELSE 0 END), 0) as TotalVendido
+                           FROM Pedidos
+                           WHERE IdUsuarioVendedor = @idVendedor
+                             AND DATE(Fecha) = DATE('now', 'localtime')";
+
+            DataTable dt = DatabaseHelper.ExecuteQuery(sql, new[] { new SQLiteParameter("@idVendedor", idVendedor) });
+            if (dt.Rows.Count > 0)
+            {
+                DataRow row = dt.Rows[0];
+                totalPedidos = row["Total"] != DBNull.Value ? Convert.ToInt32(row["Total"]) : 0;
+                pendientes = row["Pendientes"] != DBNull.Value ? Convert.ToInt32(row["Pendientes"]) : 0;
+                totalVendido = row["TotalVendido"] != DBNull.Value ? Convert.ToDecimal(row["TotalVendido"]) : 0;
+            }
+            else
+            {
+                totalPedidos = 0;
+                pendientes = 0;
+                totalVendido = 0;
+            }
         }
     }
 }

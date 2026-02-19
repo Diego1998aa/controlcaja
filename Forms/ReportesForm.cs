@@ -24,54 +24,110 @@ namespace SistemaPOS.Forms
         {
             this.Text = "Reportes";
             this.Size = new Size(1000, 600);
-            this.BackColor = Color.FromArgb(30, 30, 30);
             this.StartPosition = FormStartPosition.CenterParent;
+            UITheme.ApplyTheme(this);
 
-            Panel panelTop = new Panel { Dock = DockStyle.Top, Height = 80, BackColor = Color.FromArgb(37, 37, 38) };
-            
-            Label lblTitulo = new Label { Text = "REPORTES DE VENTAS", Font = new Font("Segoe UI", 14, FontStyle.Bold), ForeColor = Color.White, Location = new Point(20, 10), AutoSize = true };
-            
-            Label lblDe = new Label { Text = "Desde:", ForeColor = Color.White, Location = new Point(20, 45), AutoSize = true };
-            dtpInicio = new DateTimePicker { Location = new Point(70, 42), Format = DateTimePickerFormat.Short, Width = 100 };
-            // Establecer inicio de mes por defecto
-            dtpInicio.Value = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            // HEADER BAR
+            var header = UITheme.CrearHeaderBar("Reportes de Ventas", "Análisis y estadísticas del sistema");
+            this.Controls.Add(header);
 
-            Label lblA = new Label { Text = "Hasta:", ForeColor = Color.White, Location = new Point(190, 45), AutoSize = true };
-            dtpFin = new DateTimePicker { Location = new Point(240, 42), Format = DateTimePickerFormat.Short, Width = 100 };
-
-            Button btnGenerar = new Button { Text = "Filtrar", BackColor = Color.SteelBlue, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Location = new Point(360, 40), Size = new Size(100, 25) };
-            btnGenerar.Click += BtnGenerar_Click;
-
-            chkDetalle = new CheckBox 
-            { 
-                Text = "Ver Detalle por Venta", 
-                ForeColor = Color.White, 
-                Location = new Point(480, 44), 
-                AutoSize = true,
-                Checked = true // Por defecto ver detalle
+            // Panel de filtros
+            Panel panelFiltros = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 80,
+                BackColor = UITheme.PanelBackground
             };
 
-            Button btnVerTodo = new Button { Text = "Ver Todo el Historial", BackColor = Color.DarkSlateGray, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Location = new Point(650, 40), Size = new Size(150, 25) };
+            Label lblDesde = new Label
+            {
+                Text = "DESDE:",
+                ForeColor = UITheme.TextSecondary,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                Location = new Point(20, 15),
+                AutoSize = true
+            };
+            panelFiltros.Controls.Add(lblDesde);
+
+            dtpInicio = new DateTimePicker
+            {
+                Location = new Point(20, 35),
+                Format = DateTimePickerFormat.Short,
+                Width = 120,
+                Font = UITheme.FontRegular
+            };
+            dtpInicio.Value = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            UITheme.StyleDateTimePicker(dtpInicio);
+            panelFiltros.Controls.Add(dtpInicio);
+
+            Label lblHasta = new Label
+            {
+                Text = "HASTA:",
+                ForeColor = UITheme.TextSecondary,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                Location = new Point(160, 15),
+                AutoSize = true
+            };
+            panelFiltros.Controls.Add(lblHasta);
+
+            dtpFin = new DateTimePicker
+            {
+                Location = new Point(160, 35),
+                Format = DateTimePickerFormat.Short,
+                Width = 120,
+                Font = UITheme.FontRegular
+            };
+            UITheme.StyleDateTimePicker(dtpFin);
+            panelFiltros.Controls.Add(dtpFin);
+
+            chkDetalle = new CheckBox
+            {
+                Text = "Ver detalle por venta",
+                ForeColor = UITheme.TextPrimary,
+                Font = UITheme.FontRegular,
+                Location = new Point(300, 38),
+                AutoSize = true,
+                Checked = true
+            };
+            panelFiltros.Controls.Add(chkDetalle);
+
+            RoundedButton btnGenerar = new RoundedButton
+            {
+                Text = "🔍 FILTRAR",
+                Location = new Point(490, 28),
+                Size = new Size(130, 36),
+                BackColor = UITheme.PrimaryColor
+            };
+            btnGenerar.Click += BtnGenerar_Click;
+            panelFiltros.Controls.Add(btnGenerar);
+
+            RoundedButton btnVerTodo = new RoundedButton
+            {
+                Text = "📊 VER TODO EL HISTORIAL",
+                Location = new Point(640, 28),
+                Size = new Size(230, 36),
+                BackColor = UITheme.AccentColor
+            };
             btnVerTodo.Click += (s, e) => CargarTodoHistorial();
+            panelFiltros.Controls.Add(btnVerTodo);
 
-            panelTop.Controls.AddRange(new Control[] { lblTitulo, lblDe, dtpInicio, lblA, dtpFin, btnGenerar, chkDetalle, btnVerTodo });
+            this.Controls.Add(panelFiltros);
 
-            dgvReporte = new DataGridView { 
-                Dock = DockStyle.Fill, 
-                BackgroundColor = Color.FromArgb(45, 45, 48),
-                ForeColor = Color.Black,
+            // DataGridView
+            dgvReporte = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                BackgroundColor = UITheme.DarkBackground,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 ReadOnly = true,
                 AllowUserToAddRows = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 RowHeadersVisible = false
             };
-            dgvReporte.DefaultCellStyle.BackColor = Color.White;
-            dgvReporte.DefaultCellStyle.ForeColor = Color.Black;
-            dgvReporte.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
+            UITheme.StyleDataGridView(dgvReporte);
 
             this.Controls.Add(dgvReporte);
-            this.Controls.Add(panelTop);
+            this.Controls.Add(panelFiltros);
         }
 
         private void BtnGenerar_Click(object sender, EventArgs e)
@@ -100,16 +156,16 @@ namespace SistemaPOS.Forms
         {
             if (dgvReporte.Columns["Total"] != null)
                 dgvReporte.Columns["Total"].DefaultCellStyle.Format = "C0";
-            
+
             if (dgvReporte.Columns["Subtotal"] != null)
                 dgvReporte.Columns["Subtotal"].DefaultCellStyle.Format = "C0";
 
             if (dgvReporte.Columns["IVA"] != null)
                 dgvReporte.Columns["IVA"].DefaultCellStyle.Format = "C0";
-            
+
             if (dgvReporte.Columns["TotalVentas"] != null)
                 dgvReporte.Columns["TotalVentas"].DefaultCellStyle.Format = "C0";
-            
+
             if (dgvReporte.Columns["TotalEfectivo"] != null)
                 dgvReporte.Columns["TotalEfectivo"].DefaultCellStyle.Format = "C0";
 

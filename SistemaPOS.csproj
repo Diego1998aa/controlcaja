@@ -45,12 +45,18 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>$(UserProfile)\.nuget\packages\stub.system.data.sqlite.core.netframework\1.0.118\lib\net46\System.Data.SQLite.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
     <Compile Include="Helpers\UITheme.cs" />
+    <Compile Include="Helpers\StockAlertHelper.cs" />
     <Compile Include="Models\Models.cs" />
+    <Compile Include="Models\Permisos.cs" />
     <Compile Include="Models\Pedido.cs" />
     <Compile Include="Models\DetallePedido.cs" />
     <Compile Include="Models\PedidoService.cs" />
@@ -91,6 +97,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\TerminalVentaForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\VendedorMainForm.cs">
       <SubType>Form</SubType>
     </Compile>
   </ItemGroup>

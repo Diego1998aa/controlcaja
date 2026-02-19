@@ -18,7 +18,6 @@ namespace SistemaPOS.Forms
 
         public InventarioForm()
         {
-            // VALIDACIÓN DE PERMISOS
             if (!SesionActual.TienePermiso(Permiso.VerInventario))
             {
                 MessageBox.Show("No tiene permisos para acceder al inventario", "Acceso Denegado",
@@ -36,97 +35,113 @@ namespace SistemaPOS.Forms
             this.Size = new Size(1100, 700);
             this.BackColor = UITheme.DarkBackground;
 
-            // Panel Top (Filters & Actions)
-            Panel pnlTop = new Panel 
-            { 
-                Dock = DockStyle.Top, 
-                Height = 100, 
-                BackColor = UITheme.PanelBackground, 
-                Padding = new Padding(20) 
+            // Header
+            Panel header = UITheme.CrearHeaderBar("Gestión de Inventario", "Administre sus productos y stock");
+
+            // Panel de filtros
+            Panel pnlFiltros = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 55,
+                BackColor = UITheme.SurfaceColor,
+                Padding = new Padding(15, 10, 15, 10)
             };
-            
-            Label lblTitulo = new Label 
-            { 
-                Text = "GESTIÓN DE INVENTARIO", 
-                Font = UITheme.FontTitle, 
-                ForeColor = UITheme.TextPrimary, 
-                AutoSize = true, 
-                Location = new Point(20, 15) 
+
+            txtBuscar = new TextBox
+            {
+                Width = 280,
+                Height = 30,
+                Location = new Point(15, 12),
+                Font = new Font("Segoe UI", 10)
             };
-            
-            txtBuscar = new TextBox { Width = 300, Location = new Point(20, 55) };
             UITheme.StyleTextBox(txtBuscar);
-            // txtBuscar.PlaceholderText = "Buscar producto..."; // Not supported in .NET Framework
             txtBuscar.TextChanged += (s, e) => CargarProductos();
 
-            cboCategoria = new ComboBox 
-            { 
-                Width = 200, 
-                Location = new Point(340, 55), 
-                DropDownStyle = ComboBoxStyle.DropDownList, 
-                FlatStyle = FlatStyle.Flat, 
-                BackColor = UITheme.DarkBackground, 
-                ForeColor = UITheme.TextPrimary, 
-                Font = UITheme.FontText 
+            // Placeholder simulado
+            Label lblPlaceholder = new Label
+            {
+                Text = "\U0001F50D  Buscar producto...",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = UITheme.TextMuted,
+                Location = new Point(20, 16),
+                AutoSize = true,
+                BackColor = Color.FromArgb(55, 65, 81),
+                Cursor = Cursors.IBeam
             };
-            // Items se cargan en CargarCategorias
+            lblPlaceholder.Click += (s, e) => txtBuscar.Focus();
+            txtBuscar.TextChanged += (s, e) => lblPlaceholder.Visible = string.IsNullOrEmpty(txtBuscar.Text);
+            txtBuscar.GotFocus += (s, e) => lblPlaceholder.Visible = false;
+            txtBuscar.LostFocus += (s, e) => lblPlaceholder.Visible = string.IsNullOrEmpty(txtBuscar.Text);
+
+            cboCategoria = new ComboBox
+            {
+                Width = 180,
+                Location = new Point(310, 12),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(55, 65, 81),
+                ForeColor = UITheme.TextPrimary,
+                Font = new Font("Segoe UI", 10)
+            };
             cboCategoria.SelectedIndexChanged += (s, e) => CargarProductos();
 
-            chkBajoStock = new CheckBox 
-            { 
-                Text = "Solo bajo stock", 
-                Font = UITheme.FontText, 
-                ForeColor = UITheme.TextPrimary, 
-                Location = new Point(560, 58), 
-                AutoSize = true 
+            chkBajoStock = new CheckBox
+            {
+                Text = "Solo bajo stock",
+                Font = new Font("Segoe UI", 10),
+                ForeColor = UITheme.TextSecondary,
+                Location = new Point(510, 14),
+                AutoSize = true
             };
             chkBajoStock.CheckedChanged += (s, e) => CargarProductos();
 
-            // Solo mostrar botón Agregar si tiene permisos
+            // Botones de acción en los filtros
             if (SesionActual.TienePermiso(Permiso.EditarProductos))
             {
-                Button btnAgregar = new Button { Text = "+ Nuevo", Width = 120, Height = 35, Location = new Point(750, 50) };
+                Button btnAgregar = new Button { Text = "+ Nuevo Producto", Width = 150, Height = 32, Location = new Point(700, 10) };
                 UITheme.StyleButton(btnAgregar, UITheme.PrimaryColor);
                 btnAgregar.Click += BtnAgregar_Click;
-                pnlTop.Controls.Add(btnAgregar);
+                pnlFiltros.Controls.Add(btnAgregar);
             }
 
-            Button btnActualizar = new Button { Text = "Actualizar", Width = 120, Height = 35, Location = new Point(880, 50) };
-            UITheme.StyleButton(btnActualizar, UITheme.SuccessColor);
+            Button btnActualizar = new Button { Text = "\u21BB Actualizar", Width = 110, Height = 32, Location = new Point(860, 10) };
+            UITheme.StyleButton(btnActualizar, UITheme.AccentColor);
             btnActualizar.Click += (s, e) => CargarProductos();
 
-            pnlTop.Controls.AddRange(new Control[] { lblTitulo, txtBuscar, cboCategoria, chkBajoStock, btnActualizar });
+            pnlFiltros.Controls.AddRange(new Control[] { txtBuscar, lblPlaceholder, cboCategoria, chkBajoStock, btnActualizar });
 
-            // Panel Bottom (Actions)
-            Panel pnlBottom = new Panel 
-            { 
-                Dock = DockStyle.Bottom, 
-                Height = 80, 
-                BackColor = UITheme.PanelBackground, 
-                Padding = new Padding(20) 
+            // Panel inferior de acciones
+            Panel pnlBottom = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 60,
+                BackColor = UITheme.SurfaceColor,
+                Padding = new Padding(15, 10, 15, 10)
             };
-            
-            // Panel Bottom - botones según permisos
+
+            int btnX = 15;
             if (SesionActual.TienePermiso(Permiso.EditarProductos))
             {
-                Button btnEditar = new Button { Text = "Editar", Width = 130, Height = 40, Location = new Point(20, 20) };
-                UITheme.StyleButton(btnEditar, UITheme.AccentColor);
+                Button btnEditar = new Button { Text = "\u270F  Editar", Width = 120, Height = 38, Location = new Point(btnX, 10) };
+                UITheme.StyleButton(btnEditar, UITheme.PrimaryColor);
                 btnEditar.Click += BtnEditar_Click;
                 pnlBottom.Controls.Add(btnEditar);
+                btnX += 135;
             }
 
             if (SesionActual.TienePermiso(Permiso.AjustarStock))
             {
-                Button btnAjustar = new Button { Text = "Ajustar Stock", Width = 150, Height = 40, Location = new Point(170, 20) };
-                UITheme.StyleButton(btnAjustar, Color.SteelBlue);
+                Button btnAjustar = new Button { Text = "\U0001F4E6 Ajustar Stock", Width = 150, Height = 38, Location = new Point(btnX, 10) };
+                UITheme.StyleButton(btnAjustar, UITheme.InfoColor);
                 btnAjustar.Click += BtnAjustarStock_Click;
                 pnlBottom.Controls.Add(btnAjustar);
+                btnX += 165;
             }
 
             if (SesionActual.TienePermiso(Permiso.EditarProductos))
             {
-                Button btnEliminar = new Button { Text = "Eliminar", Width = 130, Height = 40, Location = new Point(340, 20) };
-                UITheme.StyleButton(btnEliminar, UITheme.ErrorColor);
+                Button btnEliminar = new Button { Text = "\U0001F5D1  Eliminar", Width = 120, Height = 38, Location = new Point(btnX, 10) };
+                UITheme.StyleButton(btnEliminar, UITheme.DangerColor);
                 btnEliminar.Click += BtnEliminar_Click;
                 pnlBottom.Controls.Add(btnEliminar);
             }
@@ -135,36 +150,24 @@ namespace SistemaPOS.Forms
             dgvProductos = new DataGridView
             {
                 Dock = DockStyle.Fill,
-                BackgroundColor = UITheme.DarkBackground,
-                BorderStyle = BorderStyle.None,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                ReadOnly = true,
                 AllowUserToAddRows = false,
                 RowHeadersVisible = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                EnableHeadersVisualStyles = false
+                ReadOnly = true
             };
-            
+            UITheme.StyleDataGridView(dgvProductos);
             ConfigurarEstiloGrid();
 
             this.Controls.Add(dgvProductos);
             this.Controls.Add(pnlBottom);
-            this.Controls.Add(pnlTop);
+            this.Controls.Add(pnlFiltros);
+            this.Controls.Add(header);
 
             CargarCategorias();
         }
 
         private void ConfigurarEstiloGrid()
         {
-            dgvProductos.DefaultCellStyle.BackColor = UITheme.PanelBackground;
-            dgvProductos.DefaultCellStyle.ForeColor = UITheme.TextPrimary;
-            dgvProductos.DefaultCellStyle.SelectionBackColor = UITheme.AccentColor;
-            dgvProductos.DefaultCellStyle.SelectionForeColor = Color.White;
-            dgvProductos.ColumnHeadersDefaultCellStyle.BackColor = UITheme.PrimaryColor;
-            dgvProductos.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvProductos.ColumnHeadersDefaultCellStyle.Font = UITheme.FontBold;
-            dgvProductos.DefaultCellStyle.Font = UITheme.FontText;
-
             dgvProductos.Columns.Clear();
             dgvProductos.Columns.Add("IdProducto", "ID");
             dgvProductos.Columns.Add("Codigo", "Código");
@@ -175,7 +178,7 @@ namespace SistemaPOS.Forms
             dgvProductos.Columns.Add("Stock", "Stock");
             dgvProductos.Columns.Add("StockMin", "Stock Mín.");
             dgvProductos.Columns.Add("Estado", "Estado");
-            
+
             dgvProductos.Columns["IdProducto"].Visible = false;
         }
 
@@ -201,9 +204,9 @@ namespace SistemaPOS.Forms
 
             if (!string.IsNullOrEmpty(busqueda))
             {
-                productos = productos.Where(p => 
-                    p.Nombre.ToLower().Contains(busqueda) || 
-                    p.CodigoBarras.Contains(busqueda) || 
+                productos = productos.Where(p =>
+                    p.Nombre.ToLower().Contains(busqueda) ||
+                    p.CodigoBarras.Contains(busqueda) ||
                     p.SKU.Contains(busqueda)).ToList();
             }
 
@@ -232,16 +235,15 @@ namespace SistemaPOS.Forms
                     p.Estado
                 );
 
-                // ALERTAS VISUALES DE STOCK
                 if (p.SinStock())
                 {
-                    dgvProductos.Rows[rowIndex].DefaultCellStyle.BackColor = Color.FromArgb(139, 0, 0); // Rojo oscuro
-                    dgvProductos.Rows[rowIndex].DefaultCellStyle.ForeColor = Color.White;
+                    dgvProductos.Rows[rowIndex].DefaultCellStyle.BackColor = Color.FromArgb(80, 245, 101, 101);
+                    dgvProductos.Rows[rowIndex].DefaultCellStyle.ForeColor = UITheme.DangerColor;
                 }
                 else if (p.TieneBajoStock())
                 {
-                    dgvProductos.Rows[rowIndex].DefaultCellStyle.BackColor = Color.FromArgb(255, 140, 0); // Naranja
-                    dgvProductos.Rows[rowIndex].DefaultCellStyle.ForeColor = Color.Black;
+                    dgvProductos.Rows[rowIndex].DefaultCellStyle.BackColor = Color.FromArgb(50, 236, 201, 75);
+                    dgvProductos.Rows[rowIndex].DefaultCellStyle.ForeColor = UITheme.WarningColor;
                 }
             }
         }
@@ -249,9 +251,7 @@ namespace SistemaPOS.Forms
         private void BtnAgregar_Click(object sender, EventArgs e)
         {
             if (new ProductoEditForm().ShowDialog() == DialogResult.OK)
-            {
                 CargarProductos();
-            }
         }
 
         private void BtnEditar_Click(object sender, EventArgs e)
@@ -260,14 +260,10 @@ namespace SistemaPOS.Forms
             {
                 int id = Convert.ToInt32(dgvProductos.SelectedRows[0].Cells["IdProducto"].Value);
                 if (new ProductoEditForm(id).ShowDialog() == DialogResult.OK)
-                {
                     CargarProductos();
-                }
             }
             else
-            {
                 MessageBox.Show("Seleccione un producto para editar.", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
         }
 
         private void BtnAjustarStock_Click(object sender, EventArgs e)
@@ -279,14 +275,10 @@ namespace SistemaPOS.Forms
                 int stock = Convert.ToInt32(dgvProductos.SelectedRows[0].Cells["Stock"].Value);
 
                 if (new AjustarStockForm(id, nombre, stock).ShowDialog() == DialogResult.OK)
-                {
                     CargarProductos();
-                }
             }
             else
-            {
                 MessageBox.Show("Seleccione un producto para ajustar stock.", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
         }
 
         private void BtnEliminar_Click(object sender, EventArgs e)
@@ -300,19 +292,15 @@ namespace SistemaPOS.Forms
                 {
                     if (ProductoService.DesactivarProducto(id))
                     {
-                        MessageBox.Show("Producto eliminado (desactivado) correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Producto eliminado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         CargarProductos();
                     }
                     else
-                    {
                         MessageBox.Show("Error al eliminar el producto.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
                 }
             }
             else
-            {
                 MessageBox.Show("Seleccione un producto para eliminar.", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
         }
     }
 }

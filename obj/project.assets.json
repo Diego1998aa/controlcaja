@@ -277,33 +277,26 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\marcelo aguilera\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\Usuario\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\SistemaPOS.csproj",
+      "projectUniqueName": "C:\\Users\\Usuario\\Desktop\\SistemaPOS\\SistemaPOS.csproj",
       "projectName": "SistemaPOS",
-      "projectPath": "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\SistemaPOS.csproj",
-      "packagesPath": "C:\\Users\\marcelo aguilera\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\marcelo aguilera\\Desktop\\SistemaPOS\\obj\\",
+      "projectPath": "C:\\Users\\Usuario\\Desktop\\SistemaPOS\\SistemaPOS.csproj",
+      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Usuario\\Desktop\\SistemaPOS\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
       "UsingMicrosoftNETSdk": false,
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\marcelo aguilera\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net472"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
