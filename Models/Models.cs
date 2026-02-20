@@ -45,6 +45,20 @@ namespace SistemaPOS.Models
         public string NombreCategoria { get; set; }
     }
 
+    public class MovimientoInventario
+    {
+        public int IdMovimiento { get; set; }
+        public int IdProducto { get; set; }
+        public string NombreProducto { get; set; }
+        public string TipoMovimiento { get; set; }
+        public int Cantidad { get; set; }
+        public int StockAnterior { get; set; }
+        public int StockNuevo { get; set; }
+        public string Motivo { get; set; }
+        public string NombreUsuario { get; set; }
+        public DateTime FechaHora { get; set; }
+    }
+
     public class ItemVenta
     {
         public Producto Producto { get; set; }

@@ -1,11 +1,9 @@
 C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.AssemblyReference.cache
 C:\Users\marcelo aguilera\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.CoreCompileInputs.cache
-C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.AssemblyReference.cache
-C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.CoreCompileInputs.cache
 C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\SistemaPOS.exe
 C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\SistemaPOS.pdb
 C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\System.Data.SQLite.dll
 C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\System.Data.SQLite.xml
-C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csproj.Up2Date
 C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.exe
 C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.pdb
+C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csprojResolveAssemblyReference.cache

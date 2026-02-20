@@ -16,6 +16,7 @@ namespace SistemaPOS.Forms
         private TextBox txtCantidad;
         private ComboBox cboTipo;
         private TextBox txtMotivo;
+        private Label lblNuevoStock;
 
         public AjustarStockForm(int idProducto, string nombreProducto, int stockActual)
         {
@@ -28,28 +29,27 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Text = "Ajustar Stock";
-            this.Size = new Size(550, 520);
+            this.Size = new Size(550, 560);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             UITheme.ApplyTheme(this);
 
-            // HEADER BAR
             var header = UITheme.CrearHeaderBar("Ajuste de Inventario", nombreProducto);
             this.Controls.Add(header);
 
-            // Panel contenedor
+            // Panel centrado: (534 - 470) / 2 ≈ 32px de margen
             RoundedPanel panel = new RoundedPanel
             {
-                Location = new Point(30, 100),
-                Size = new Size(470, 340),
+                Location = new Point(32, 100),
+                Size = new Size(470, 390),
                 BackColor = UITheme.PanelBackground,
                 Radius = 12
             };
 
             // Stock actual (grande y destacado)
-            Label lblStockActual = new Label
+            Label lblStockActualTitulo = new Label
             {
                 Text = "STOCK ACTUAL",
                 Font = new Font("Segoe UI", 9, FontStyle.Bold),
@@ -57,7 +57,7 @@ namespace SistemaPOS.Forms
                 Location = new Point(20, 20),
                 AutoSize = true
             };
-            panel.Controls.Add(lblStockActual);
+            panel.Controls.Add(lblStockActualTitulo);
 
             Label lblStockValor = new Label
             {
@@ -69,7 +69,6 @@ namespace SistemaPOS.Forms
             };
             panel.Controls.Add(lblStockValor);
 
-            // Separador
             Panel separador = new Panel
             {
                 Location = new Point(20, 90),
@@ -99,6 +98,7 @@ namespace SistemaPOS.Forms
             UITheme.StyleComboBox(cboTipo);
             cboTipo.Items.AddRange(new string[] { "Entrada (Compra)", "Salida (Merma/Uso)", "Ajuste (Corrección)" });
             cboTipo.SelectedIndex = 0;
+            cboTipo.SelectedIndexChanged += (s, e) => ActualizarPreview();
             panel.Controls.Add(cboTipo);
 
             // Cantidad
@@ -120,7 +120,28 @@ namespace SistemaPOS.Forms
             };
             UITheme.StyleTextBox(txtCantidad);
             txtCantidad.KeyPress += (s, e) => { if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar)) e.Handled = true; };
+            txtCantidad.TextChanged += (s, e) => ActualizarPreview();
             panel.Controls.Add(txtCantidad);
+
+            // Preview del nuevo stock
+            lblNuevoStock = new Label
+            {
+                Text = "Nuevo stock: ingrese una cantidad",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = UITheme.TextMuted,
+                Location = new Point(20, 175),
+                Size = new Size(430, 22),
+                AutoSize = false
+            };
+            panel.Controls.Add(lblNuevoStock);
+
+            Panel separador2 = new Panel
+            {
+                Location = new Point(20, 205),
+                Size = new Size(430, 1),
+                BackColor = UITheme.WithAlpha(UITheme.TextSecondary, 60)
+            };
+            panel.Controls.Add(separador2);
 
             // Motivo
             Label lblMotivo = new Label
@@ -128,15 +149,15 @@ namespace SistemaPOS.Forms
                 Text = "MOTIVO / NOTAS",
                 Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 ForeColor = UITheme.TextSecondary,
-                Location = new Point(20, 180),
+                Location = new Point(20, 220),
                 AutoSize = true
             };
             panel.Controls.Add(lblMotivo);
 
             txtMotivo = new TextBox
             {
-                Location = new Point(20, 202),
-                Size = new Size(430, 60),
+                Location = new Point(20, 242),
+                Size = new Size(430, 65),
                 Font = UITheme.FontRegular,
                 Multiline = true
             };
@@ -146,22 +167,24 @@ namespace SistemaPOS.Forms
             // Info text
             Label lblInfo = new Label
             {
-                Text = "• Entrada: suma al stock | • Salida: resta del stock | • Ajuste: reemplaza el stock",
+                Text = "• Entrada: suma al stock  |  • Salida: resta del stock  |  • Ajuste: reemplaza el stock",
                 Font = new Font("Segoe UI", 8),
                 ForeColor = UITheme.TextMuted,
-                Location = new Point(20, 275),
+                Location = new Point(20, 320),
                 Size = new Size(430, 40)
             };
             panel.Controls.Add(lblInfo);
 
             this.Controls.Add(panel);
 
-            // Botones
+            // Botones — centrados sobre la ventana (cliente ≈ 534px)
+            // Total botones = 160+14+145 = 319px → inicio en (534-319)/2 ≈ 108
+            int btnY = 508;
             RoundedButton btnGuardar = new RoundedButton
             {
-                Text = "💾 GUARDAR",
-                Location = new Point(260, 460),
-                Size = new Size(140, 40),
+                Text = "GUARDAR",
+                Location = new Point(108, btnY),
+                Size = new Size(160, 42),
                 BackColor = UITheme.SuccessColor
             };
             btnGuardar.Click += BtnGuardar_Click;
@@ -170,12 +193,44 @@ namespace SistemaPOS.Forms
             RoundedButton btnCancelar = new RoundedButton
             {
                 Text = "CANCELAR",
-                Location = new Point(410, 460),
-                Size = new Size(120, 40),
+                Location = new Point(282, btnY),
+                Size = new Size(145, 42),
                 BackColor = UITheme.ErrorColor
             };
             btnCancelar.Click += (s, e) => this.DialogResult = DialogResult.Cancel;
             this.Controls.Add(btnCancelar);
+        }
+
+        private void ActualizarPreview()
+        {
+            int cantidad;
+            if (!int.TryParse(txtCantidad.Text, out cantidad) || cantidad <= 0)
+            {
+                lblNuevoStock.Text = "Nuevo stock: ingrese una cantidad";
+                lblNuevoStock.ForeColor = UITheme.TextMuted;
+                return;
+            }
+
+            string tipo = cboTipo.SelectedItem.ToString().Split(' ')[0];
+            int nuevoStock = stockActual;
+
+            if (tipo == "Entrada") nuevoStock += cantidad;
+            else if (tipo == "Salida") nuevoStock -= cantidad;
+            else if (tipo == "Ajuste") nuevoStock = cantidad;
+
+            if (nuevoStock < 0)
+            {
+                lblNuevoStock.Text = string.Format("Nuevo stock: {0} — ¡No puede ser negativo!", nuevoStock);
+                lblNuevoStock.ForeColor = UITheme.DangerColor;
+            }
+            else
+            {
+                lblNuevoStock.Text = string.Format("Nuevo stock: {0} unidades  ({1}{2})",
+                    nuevoStock,
+                    nuevoStock > stockActual ? "+" : "",
+                    nuevoStock - stockActual);
+                lblNuevoStock.ForeColor = nuevoStock >= stockActual ? UITheme.SuccessColor : UITheme.WarningColor;
+            }
         }
 
         private void BtnGuardar_Click(object sender, EventArgs e)
@@ -192,7 +247,7 @@ namespace SistemaPOS.Forms
 
             if (tipo == "Entrada") nuevoStock += cantidad;
             else if (tipo == "Salida") nuevoStock -= cantidad;
-            else if (tipo == "Ajuste") nuevoStock = cantidad; // Ajuste reemplaza el stock
+            else if (tipo == "Ajuste") nuevoStock = cantidad;
 
             if (nuevoStock < 0)
             {
@@ -207,17 +262,19 @@ namespace SistemaPOS.Forms
                 {
                     try
                     {
-                        // Actualizar Producto
                         string sqlUpdate = "UPDATE Productos SET StockActual = @stock WHERE IdProducto = @id";
-                        using(var cmd = new SQLiteCommand(sqlUpdate, conn, trans)) {
+                        using (var cmd = new SQLiteCommand(sqlUpdate, conn, trans))
+                        {
                             cmd.Parameters.AddWithValue("@stock", nuevoStock);
                             cmd.Parameters.AddWithValue("@id", idProducto);
                             cmd.ExecuteNonQuery();
                         }
 
-                        // Registrar Movimiento
-                        string sqlMov = "INSERT INTO Movimientos_Inventario (IdProducto, TipoMovimiento, Cantidad, StockAnterior, StockNuevo, Motivo, IdUsuario) VALUES (@id, @tipo, @cant, @ant, @nue, @mot, @user)";
-                        using(var cmd = new SQLiteCommand(sqlMov, conn, trans)) {
+                        string sqlMov = @"INSERT INTO Movimientos_Inventario
+                            (IdProducto, TipoMovimiento, Cantidad, StockAnterior, StockNuevo, Motivo, IdUsuario)
+                            VALUES (@id, @tipo, @cant, @ant, @nue, @mot, @user)";
+                        using (var cmd = new SQLiteCommand(sqlMov, conn, trans))
+                        {
                             cmd.Parameters.AddWithValue("@id", idProducto);
                             cmd.Parameters.AddWithValue("@tipo", tipo);
                             cmd.Parameters.AddWithValue("@cant", cantidad);
@@ -227,10 +284,11 @@ namespace SistemaPOS.Forms
                             cmd.Parameters.AddWithValue("@user", SesionActual.UsuarioActivo.IdUsuario);
                             cmd.ExecuteNonQuery();
                         }
+
                         trans.Commit();
                         this.DialogResult = DialogResult.OK;
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         trans.Rollback();
                         MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
