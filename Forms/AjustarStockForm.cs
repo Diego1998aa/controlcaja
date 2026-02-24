@@ -29,7 +29,7 @@ namespace SistemaPOS.Forms
         private void InitializeComponent()
         {
             this.Text = "Ajustar Stock";
-            this.Size = new Size(550, 560);
+            this.Size = new Size(550, 620);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -179,7 +179,7 @@ namespace SistemaPOS.Forms
 
             // Botones — centrados sobre la ventana (cliente ≈ 534px)
             // Total botones = 160+14+145 = 319px → inicio en (534-319)/2 ≈ 108
-            int btnY = 508;
+            int btnY = 515;
             RoundedButton btnGuardar = new RoundedButton
             {
                 Text = "GUARDAR",

@@ -34,6 +34,7 @@ echo Usando compilador: %CSC%
 if not exist "bin" mkdir "bin"
 if not exist "bin\x86" mkdir "bin\x86"
 if not exist "bin\x64" mkdir "bin\x64"
+if not exist "bin\Resources" mkdir "bin\Resources"
 
 REM 3. Copiar dependencias (SQLite)
 echo Copiando librerias...
@@ -53,10 +54,20 @@ copy /Y "%SQLITE_PKG%\build\net46\x86\SQLite.Interop.dll" "bin\x86\" >nul
 copy /Y "%SQLITE_PKG%\build\net46\x64\SQLite.Interop.dll" "bin\x64\" >nul
 copy /Y "%SQLITE_PKG%\build\net46\x64\SQLite.Interop.dll" "bin\" >nul
 
-REM 4. Compilar
+REM Copiar recursos de imagen (logo empresa)
+if exist "Resources\logo.png" copy /Y "Resources\logo.png" "bin\Resources\" >nul
+if exist "Resources\logo_real.png" copy /Y "Resources\logo_real.png" "bin\Resources\" >nul
+if exist "Urbanzync_paillaco (1).png" copy /Y "Urbanzync_paillaco (1).png" "bin\" >nul
+
+REM 4. Referencias WPF (necesarias para cargar logo WebP via WIC)
+set "WPF_LIB="
+if exist "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF\PresentationCore.dll" set "WPF_LIB=/lib:C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
+if not defined WPF_LIB if exist "C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF\PresentationCore.dll" set "WPF_LIB=/lib:C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF"
+
+REM 5. Compilar
 echo Compilando aplicacion...
 
-"%CSC%" /target:winexe /out:bin\SistemaPOS.exe /r:bin\System.Data.SQLite.dll /r:System.dll /r:System.Core.dll /r:System.Data.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Xml.dll Program.cs Data\*.cs Forms\*.cs Helpers\*.cs Models\*.cs Services\*.cs
+"%CSC%" /target:winexe /out:bin\SistemaPOS.exe /r:bin\System.Data.SQLite.dll /r:System.dll /r:System.Core.dll /r:System.Data.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Xml.dll /r:System.Xaml.dll %WPF_LIB% /r:WindowsBase.dll /r:PresentationCore.dll Program.cs Data\*.cs Forms\*.cs Helpers\*.cs Models\*.cs Services\*.cs
 
 if %ERRORLEVEL% NEQ 0 goto ERROR_COMPILE
 
@@ -64,7 +75,7 @@ echo.
 echo Compilacion exitosa. Iniciando Sistema POS...
 echo.
 
-REM 5. Ejecutar
+REM 6. Ejecutar
 start "" "bin\SistemaPOS.exe"
 exit /b 0
 

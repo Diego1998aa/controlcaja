@@ -31,6 +31,7 @@ namespace SistemaPOS.Forms
 
         private void InitializeComponent()
         {
+            this.AutoScaleMode = AutoScaleMode.None;
             this.Size = new Size(1200, 700);
             this.BackColor = UITheme.DarkBackground;
 

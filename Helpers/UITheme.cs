@@ -65,6 +65,7 @@ namespace SistemaPOS.Helpers
 
         public static void ApplyTheme(Form form)
         {
+            form.AutoScaleMode = AutoScaleMode.None;
             form.BackColor = DarkBackground;
             form.ForeColor = TextPrimary;
             form.Font = FontRegular;
@@ -226,10 +227,11 @@ namespace SistemaPOS.Helpers
         /// </summary>
         public static Panel CrearHeaderBar(string titulo, string subtitulo = null)
         {
+            int headerHeight = subtitulo != null ? 74 : 62;
             Panel header = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 60,
+                Height = headerHeight,
                 BackColor = SurfaceColor,
                 Padding = new Padding(20, 0, 20, 0)
             };
@@ -237,25 +239,45 @@ namespace SistemaPOS.Helpers
             Label lblTitulo = new Label
             {
                 Text = titulo,
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                Font = new Font("Segoe UI", 15, FontStyle.Bold),
                 ForeColor = TextPrimary,
-                AutoSize = true,
-                Location = new Point(20, subtitulo != null ? 8 : 16)
+                AutoSize = false,
+                Location = new Point(20, subtitulo != null ? 8 : 16),
+                Size = new Size(200, 28),
+                TextAlign = ContentAlignment.MiddleLeft
             };
+            lblTitulo.UseCompatibleTextRendering = true;
             header.Controls.Add(lblTitulo);
 
+            Label lblSub = null;
             if (subtitulo != null)
             {
-                Label lblSub = new Label
+                lblSub = new Label
                 {
                     Text = subtitulo,
-                    Font = FontSmall,
+                    Font = new Font("Segoe UI", 9),
                     ForeColor = TextSecondary,
-                    AutoSize = true,
-                    Location = new Point(20, 34)
+                    AutoSize = false,
+                    Location = new Point(20, 38),
+                    Size = new Size(200, 18),
+                    TextAlign = ContentAlignment.MiddleLeft
                 };
+                lblSub.UseCompatibleTextRendering = true;
                 header.Controls.Add(lblSub);
             }
+
+            Action ajustarLayoutHeader = () =>
+            {
+                int anchoDisponible = Math.Max(120, header.Width - 40);
+                lblTitulo.Size = new Size(anchoDisponible, 28);
+
+                if (lblSub != null)
+                {
+                    lblSub.Size = new Size(anchoDisponible, 18);
+                }
+            };
+            header.Resize += (s, e) => ajustarLayoutHeader();
+            ajustarLayoutHeader();
 
             // Línea inferior accent
             Panel lineaAccent = new Panel
@@ -358,9 +380,16 @@ namespace SistemaPOS.Helpers
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            if (this.Width <= 1 || this.Height <= 1)
+            {
+                return;
+            }
 
-            using (GraphicsPath path = CreateRoundedPath(this.ClientRectangle, Radius))
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.Default;
+
+            Rectangle fillRect = new Rectangle(0, 0, this.Width, this.Height);
+            using (GraphicsPath path = CreateRoundedPath(fillRect, Radius))
             {
                 this.Region = new Region(path);
 
@@ -373,12 +402,13 @@ namespace SistemaPOS.Helpers
                 {
                     using (Pen pen = new Pen(BorderColor, BorderWidth))
                     {
-                        Rectangle rect = new Rectangle(
-                            BorderWidth / 2,
-                            BorderWidth / 2,
-                            this.Width - BorderWidth,
-                            this.Height - BorderWidth);
-                        using (GraphicsPath borderPath = CreateRoundedPath(rect, Radius))
+                        pen.Alignment = PenAlignment.Inset;
+                        Rectangle borderRect = new Rectangle(
+                            0,
+                            0,
+                            this.Width - 1,
+                            this.Height - 1);
+                        using (GraphicsPath borderPath = CreateRoundedPath(borderRect, Math.Max(0, Radius - 1)))
                         {
                             e.Graphics.DrawPath(pen, borderPath);
                         }
@@ -390,7 +420,14 @@ namespace SistemaPOS.Helpers
         private GraphicsPath CreateRoundedPath(Rectangle rect, int radius)
         {
             GraphicsPath path = new GraphicsPath();
-            int d = radius * 2;
+            int safeRadius = Math.Max(0, Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2));
+            if (safeRadius == 0)
+            {
+                path.AddRectangle(rect);
+                path.CloseFigure();
+                return path;
+            }
+            int d = safeRadius * 2;
             path.AddArc(rect.X, rect.Y, d, d, 180, 90);
             path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
             path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
@@ -500,9 +537,11 @@ namespace SistemaPOS.Helpers
     /// </summary>
     public class ModernTextBox : Panel
     {
-        private TextBox _innerTextBox;
-        private Label _placeholderLabel;
-        private Panel _borderBottom;
+        private readonly TextBox _innerTextBox;
+        private readonly Label _placeholderLabel;
+        private readonly Panel _borderBottom;
+        private readonly int _leftPadding;
+        private readonly int _rightPadding = 12;
         public string PlaceholderText { get; set; }
 
         public new string Text
@@ -547,19 +586,22 @@ namespace SistemaPOS.Helpers
         {
             PlaceholderText = placeholder;
             this.Height = 42;
-            this.BackColor = Color.FromArgb(55, 65, 81);
+            this.BackColor = Color.FromArgb(44, 55, 74);
+            this.Margin = Padding.Empty;
+            this.Padding = Padding.Empty;
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
 
-            int leftMargin = iconText != "" ? 38 : 12;
-            int topMargin = 11;
+            _leftPadding = iconText != "" ? 38 : 12;
 
             if (iconText != "")
             {
                 Label lblIcon = new Label
                 {
                     Text = iconText,
-                    Font = new Font("Segoe UI", 12),
+                    Font = new Font("Segoe UI Emoji", 11),
                     ForeColor = UITheme.TextMuted,
-                    Location = new Point(10, topMargin),
+                    BackColor = this.BackColor,
+                    Location = new Point(10, 10),
                     AutoSize = true
                 };
                 this.Controls.Add(lblIcon);
@@ -568,19 +610,18 @@ namespace SistemaPOS.Helpers
             _borderBottom = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 2,
-                BackColor = UITheme.BorderColor
+                Height = 0,
+                BackColor = this.BackColor
             };
 
             _innerTextBox = new TextBox
             {
                 BorderStyle = BorderStyle.None,
-                BackColor = Color.FromArgb(55, 65, 81),
+                BackColor = this.BackColor,
                 ForeColor = UITheme.TextPrimary,
                 Font = new Font("Segoe UI", 11),
-                Location = new Point(leftMargin, topMargin),
-                Width = 250,
-                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
+                Location = new Point(_leftPadding, 11),
+                Width = 120
             };
             _innerTextBox.GotFocus += (s, e) => { OnFocusChanged(true); UpdatePlaceholder(); };
             _innerTextBox.LostFocus += (s, e) => { OnFocusChanged(false); UpdatePlaceholder(); };
@@ -591,29 +632,45 @@ namespace SistemaPOS.Helpers
                 Text = placeholder,
                 Font = new Font("Segoe UI", 11),
                 ForeColor = UITheme.TextMuted,
-                BackColor = Color.Transparent,
+                BackColor = this.BackColor,
                 AutoSize = false,
-                Location = new Point(leftMargin, topMargin - 1),
-                Size = new Size(250, 20),
+                Location = new Point(_leftPadding, 10),
+                Size = new Size(120, 20),
                 TextAlign = ContentAlignment.MiddleLeft,
-                Cursor = Cursors.IBeam,
-                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right
+                Cursor = Cursors.IBeam
             };
             _placeholderLabel.Click += (s, e) => _innerTextBox.Focus();
 
             this.Controls.Add(_borderBottom);
             this.Controls.Add(_innerTextBox);
             this.Controls.Add(_placeholderLabel);
+            this.Resize += (s, e) => LayoutInnerControls();
+
+            LayoutInnerControls();
+            UpdatePlaceholder();
         }
 
         private void OnFocusChanged(bool focused)
         {
-            _borderBottom.BackColor = focused ? UITheme.PrimaryColor : UITheme.BorderColor;
+            // El enfoque visual lo maneja el contenedor (wrapper).
         }
 
         private void UpdatePlaceholder()
         {
             _placeholderLabel.Visible = string.IsNullOrEmpty(_innerTextBox.Text) && !_innerTextBox.Focused;
+        }
+
+        private void LayoutInnerControls()
+        {
+            int availableWidth = Math.Max(60, this.Width - _leftPadding - _rightPadding);
+            int textHeight = TextRenderer.MeasureText("Ag", _innerTextBox.Font).Height;
+            int y = Math.Max(8, (this.Height - textHeight) / 2 - 1);
+
+            _innerTextBox.Location = new Point(_leftPadding, y + 1);
+            _innerTextBox.Size = new Size(availableWidth, textHeight + 2);
+
+            _placeholderLabel.Location = new Point(_leftPadding, y);
+            _placeholderLabel.Size = new Size(availableWidth, textHeight + 3);
         }
 
         public new bool Focus()

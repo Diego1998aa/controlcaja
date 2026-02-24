@@ -24,7 +24,8 @@ namespace SistemaPOS
                 Thread.CurrentThread.CurrentUICulture = culture;
 
                 Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
+                // GDI+ rendering avoids clipped/truncated label text in several forms.
+                Application.SetCompatibleTextRenderingDefault(true);
                 DatabaseHelper.InitializeDatabase();
                 Application.Run(new LoginForm());
             }

@@ -6,4 +6,5 @@ C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\System.Data.SQLite.dll
 C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\System.Data.SQLite.xml
 C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.exe
 C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.pdb
+C:\Users\Usuario\Desktop\SistemaPOS\bin\Debug\Resources\logo.png
 C:\Users\Usuario\Desktop\SistemaPOS\obj\Debug\SistemaPOS.csprojResolveAssemblyReference.cache
